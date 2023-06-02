@@ -1,4 +1,4 @@
-package pkg
+package wrapper
 
 import (
 	"github.com/checkmarxdev/gpt-wrapper/internal"
