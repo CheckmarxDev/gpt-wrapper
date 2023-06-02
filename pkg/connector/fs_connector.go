@@ -15,9 +15,12 @@ type FileSystemConnector struct {
 	BaseDir string
 }
 
-func NewFileSystemConnector() Connector {
+func NewFileSystemConnector(baseDir string) Connector {
+	if baseDir == "" {
+		baseDir = os.TempDir()
+	}
 	return FileSystemConnector{
-		BaseDir: os.TempDir(),
+		BaseDir: baseDir,
 	}
 }
 

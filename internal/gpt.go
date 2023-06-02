@@ -32,6 +32,15 @@ type ChatCompletionResponse struct {
 	} `json:"choices,omitempty"`
 }
 
+type ErrorResponse struct {
+	Error struct {
+		Message string `json:"message,omitempty"`
+		Type    string `json:"type,omitempty"`
+		Param   string `json:"param,omitempty"`
+		Code    string `json:"code,omitempty"`
+	} `json:"error,omitempty"`
+}
+
 type Wrapper interface {
 	Call(request ChatCompletionRequest) (*ChatCompletionResponse, error)
 }
@@ -86,14 +95,21 @@ func (w WrapperImpl) handleGptResponse(requestBody ChatCompletionRequest, resp *
 	if err != nil {
 		return nil, err
 	}
-	switch resp.StatusCode {
-	case http.StatusOK:
+	if resp.StatusCode == http.StatusOK {
 		var responseBody = new(ChatCompletionResponse)
 		err = json.Unmarshal(bodyBytes, responseBody)
 		if err != nil {
 			return nil, err
 		}
 		return responseBody, nil
+	}
+	var errorResponse = new(ErrorResponse)
+	err = json.Unmarshal(bodyBytes, errorResponse)
+	if err != nil {
+		return nil, err
+	}
+	log.Println(errorResponse.Error.Message)
+	switch resp.StatusCode {
 	case http.StatusBadRequest:
 		log.Println("model's maximum context length, trimming oldest 3 messages from context")
 		return w.Call(ChatCompletionRequest{

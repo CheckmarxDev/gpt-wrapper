@@ -11,7 +11,7 @@ import (
 
 func TestCallGPT_FS(t *testing.T) {
 	var history []message.Message
-	wrapper := NewStatefulWrapper(connector.NewFileSystemConnector(), apikey, model.Model)
+	wrapper := NewStatefulWrapper(connector.NewFileSystemConnector(""), apikey, model.Model)
 	id := wrapper.GenerateId()
 	for _, q := range userQuestions {
 		var err error
