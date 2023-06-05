@@ -2,11 +2,12 @@ package pkg
 
 import (
 	"fmt"
-	"gpt-wrapper/internal/model"
-	"gpt-wrapper/internal/role"
-	"gpt-wrapper/pkg/connector"
-	"gpt-wrapper/pkg/message"
 	"testing"
+
+	"github.com/checkmarxdev/gpt-wrapper/internal/model"
+	"github.com/checkmarxdev/gpt-wrapper/internal/role"
+	"github.com/checkmarxdev/gpt-wrapper/pkg/connector"
+	"github.com/checkmarxdev/gpt-wrapper/pkg/message"
 )
 
 func TestCallGPT_FS(t *testing.T) {

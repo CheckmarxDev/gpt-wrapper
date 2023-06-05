@@ -2,9 +2,10 @@ package connector
 
 import (
 	"encoding/json"
-	"gpt-wrapper/pkg/message"
 	"os"
 	"path"
+
+	"github.com/checkmarxdev/gpt-wrapper/pkg/message"
 
 	"github.com/google/uuid"
 )

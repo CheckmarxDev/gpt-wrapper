@@ -1,4 +1,4 @@
-module gpt-wrapper
+module github.com/checkmarxdev/gpt-wrapper
 
 go 1.20
 

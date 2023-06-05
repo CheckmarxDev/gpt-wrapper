@@ -1,8 +1,8 @@
 package pkg
 
 import (
-	"gpt-wrapper/pkg/connector"
-	"gpt-wrapper/pkg/message"
+	"github.com/checkmarxdev/gpt-wrapper/pkg/connector"
+	"github.com/checkmarxdev/gpt-wrapper/pkg/message"
 
 	"github.com/google/uuid"
 )
