@@ -4,17 +4,19 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/checkmarxdev/gpt-wrapper/pkg/connector"
-	"github.com/checkmarxdev/gpt-wrapper/pkg/message"
-	"github.com/checkmarxdev/gpt-wrapper/pkg/model"
-	"github.com/checkmarxdev/gpt-wrapper/pkg/role"
+	"github.com/checkmarxDev/gpt-wrapper/pkg/connector"
+	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
+	"github.com/checkmarxDev/gpt-wrapper/pkg/model"
+	"github.com/checkmarxDev/gpt-wrapper/pkg/role"
 )
 
 func TestCallGPT_FS(t *testing.T) {
 	var history []message.Message
 	wrapper := NewStatefulWrapper(connector.NewFileSystemConnector(""), apikey, model.Model)
 	id := wrapper.GenerateId()
+	t.Log(id)
 	for _, q := range userQuestions {
+		t.Log(q)
 		var err error
 		var newMessages []message.Message
 		var response []message.Message

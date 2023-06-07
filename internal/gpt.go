@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"time"
 )
@@ -108,29 +107,22 @@ func (w WrapperImpl) handleGptResponse(requestBody ChatCompletionRequest, resp *
 	if err != nil {
 		return nil, err
 	}
-	log.Println(errorResponse.Error.Message)
 	switch resp.StatusCode {
 	case http.StatusBadRequest:
-		log.Println("model's maximum context length, trimming oldest 3 messages from context")
 		return w.Call(ChatCompletionRequest{
 			Model:    requestBody.Model,
 			Messages: requestBody.Messages[3:],
 		})
 	case http.StatusUnauthorized:
-		log.Println("api key issue")
-		return nil, errors.New(string(bodyBytes))
+		return nil, errors.New(errorResponse.Error.Message)
 	case http.StatusNotFound:
-		log.Println("model not found")
-		return nil, errors.New(string(bodyBytes))
+		return nil, errors.New(errorResponse.Error.Message)
 	case http.StatusTooManyRequests:
-		log.Printf("Too many requests, sleeping %d seconds\n", RateLimitWaitSeconds)
 		time.Sleep(RateLimitWaitSeconds * time.Second)
 		return w.Call(requestBody)
 	case http.StatusInternalServerError:
-		log.Println("gpt error")
-		return nil, errors.New(string(bodyBytes))
+		return nil, errors.New(errorResponse.Error.Message)
 	default:
-		log.Printf("response code %d\n", resp.StatusCode)
-		return nil, errors.New(string(bodyBytes))
+		return nil, errors.New(errorResponse.Error.Message)
 	}
 }

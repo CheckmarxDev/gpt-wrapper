@@ -5,7 +5,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/checkmarxdev/gpt-wrapper/pkg/message"
+	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
 
 	"github.com/google/uuid"
 )
@@ -60,9 +60,31 @@ func (w FileSystemConnector) SaveHistory(id uuid.UUID, history []message.Message
 		return err
 	}
 
-	return os.WriteFile(filePath, bytes, 0644)
+	return w.writeHistory(filePath, bytes)
+}
+
+func (w FileSystemConnector) writeHistory(filepath string, bytes []byte) error {
+	var err error
+
+	_, err = os.Stat(w.getBasePath())
+	if err != nil {
+		if os.IsNotExist(err) {
+			err = os.Mkdir(w.getBasePath(), 0700)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	return os.WriteFile(filepath, bytes, 0644)
 }
 
 func (w FileSystemConnector) getFilePathById(id uuid.UUID) string {
-	return path.Join(w.BaseDir, innerDir, id.String())
+	return path.Join(w.getBasePath(), id.String())
+}
+
+func (w FileSystemConnector) getBasePath() string {
+	return path.Join(w.BaseDir, innerDir)
 }

@@ -1,8 +1,8 @@
 package wrapper
 
 import (
-	"github.com/checkmarxdev/gpt-wrapper/internal"
-	"github.com/checkmarxdev/gpt-wrapper/pkg/message"
+	"github.com/checkmarxDev/gpt-wrapper/internal"
+	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
 )
 
 type StatelessWrapper interface {
