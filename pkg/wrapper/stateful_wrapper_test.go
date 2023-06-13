@@ -6,13 +6,12 @@ import (
 
 	"github.com/checkmarxDev/gpt-wrapper/pkg/connector"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
-	"github.com/checkmarxDev/gpt-wrapper/pkg/model"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/role"
 )
 
 func TestCallGPT_FS(t *testing.T) {
 	var history []message.Message
-	wrapper := NewStatefulWrapper(connector.NewFileSystemConnector(""), apikey, model.Model)
+	wrapper := NewStatefulWrapper(connector.NewFileSystemConnector(""), apikey, "")
 	id := wrapper.GenerateId()
 	t.Log(id)
 	for _, q := range userQuestions {

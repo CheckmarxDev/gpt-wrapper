@@ -5,14 +5,13 @@ import (
 	"testing"
 
 	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
-	"github.com/checkmarxDev/gpt-wrapper/pkg/model"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/role"
 )
 
 func TestCallGPT(t *testing.T) {
 	var history []message.Message
 	var response []message.Message
-	wrapper := NewStatelessWrapper(apikey, model.Model)
+	wrapper := NewStatelessWrapper(apikey, "")
 	for _, q := range userQuestions {
 		t.Log(q)
 		var err error

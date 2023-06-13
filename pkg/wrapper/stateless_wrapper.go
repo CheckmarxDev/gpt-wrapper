@@ -3,6 +3,7 @@ package wrapper
 import (
 	"github.com/checkmarxDev/gpt-wrapper/internal"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
+	"github.com/checkmarxDev/gpt-wrapper/pkg/models"
 )
 
 type StatelessWrapper interface {
@@ -15,6 +16,9 @@ type StatelessWrapperImpl struct {
 }
 
 func NewStatelessWrapper(apikey, model string) StatelessWrapper {
+	if model == "" {
+		model = models.DefaultModel
+	}
 	return StatelessWrapperImpl{
 		Apikey: apikey,
 		Model:  model,
