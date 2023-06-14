@@ -8,5 +8,6 @@ import (
 
 type Connector interface {
 	HistoryById(uuid.UUID) ([]message.Message, error)
+	DeleteHistory(uuid.UUID) error
 	SaveHistory(uuid.UUID, []message.Message) error
 }

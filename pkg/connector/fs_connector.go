@@ -51,6 +51,20 @@ func (w FileSystemConnector) HistoryById(id uuid.UUID) ([]message.Message, error
 	return history, nil
 }
 
+func (w FileSystemConnector) DeleteHistory(id uuid.UUID) error {
+	filePath := w.getFilePathById(id)
+
+	_, err := os.Stat(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+
+	return os.Remove(filePath)
+}
+
 func (w FileSystemConnector) SaveHistory(id uuid.UUID, history []message.Message) error {
 	var err error
 	filePath := w.getFilePathById(id)
