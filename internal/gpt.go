@@ -114,15 +114,25 @@ func (w WrapperImpl) handleGptResponse(requestBody ChatCompletionRequest, resp *
 			Messages: requestBody.Messages[3:],
 		})
 	case http.StatusUnauthorized:
-		return nil, errors.New(errorResponse.Error.Message)
+		return nil, fromResponse(errorResponse)
 	case http.StatusNotFound:
-		return nil, errors.New(errorResponse.Error.Message)
+		return nil, fromResponse(errorResponse)
 	case http.StatusTooManyRequests:
 		time.Sleep(RateLimitWaitSeconds * time.Second)
 		return w.Call(requestBody)
 	case http.StatusInternalServerError:
-		return nil, errors.New(errorResponse.Error.Message)
+		return nil, fromResponse(errorResponse)
 	default:
-		return nil, errors.New(errorResponse.Error.Message)
+		return nil, fromResponse(errorResponse)
 	}
+}
+
+func fromResponse(e *ErrorResponse) error {
+	var msg string
+	if e.Error.Message != "" {
+		msg = e.Error.Message
+	} else {
+		msg = e.Error.Code
+	}
+	return errors.New(msg)
 }
