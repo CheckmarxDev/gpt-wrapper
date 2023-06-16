@@ -5,13 +5,14 @@ import (
 	"testing"
 
 	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
+	"github.com/checkmarxDev/gpt-wrapper/pkg/models"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/role"
 )
 
 func TestCallGPT(t *testing.T) {
 	var history []message.Message
 	var response []message.Message
-	wrapper := NewStatelessWrapper(apikey, "")
+	wrapper := NewStatelessWrapper(apikey, models.GPT3Dot5Turbo, 4)
 	for _, q := range userQuestions {
 		t.Log(q)
 		var err error
@@ -42,5 +43,17 @@ func TestCallGPT(t *testing.T) {
 	}
 	for _, m := range history {
 		t.Logf("%s\n\n%s\n\n", m.Role, m.Content)
+	}
+}
+
+func TestCallEmptyApiKey(t *testing.T) {
+	wrapper := NewStatelessWrapper("", models.GPT3Dot5Turbo, 4)
+	q := userQuestions[0]
+	_, err := wrapper.Call(nil, []message.Message{{
+		Role:    role.User,
+		Content: fmt.Sprintf(userInput, q),
+	}})
+	if err == nil {
+		t.Fatal("Call succeeded without API key")
 	}
 }

@@ -11,17 +11,19 @@ type StatelessWrapper interface {
 }
 
 type StatelessWrapperImpl struct {
-	Apikey string
-	Model  string
+	apiKey  string
+	model   string
+	dropLen int
 }
 
-func NewStatelessWrapper(apikey, model string) StatelessWrapper {
+func NewStatelessWrapper(apiKey, model string, dropLen int) StatelessWrapper {
 	if model == "" {
 		model = models.DefaultModel
 	}
 	return StatelessWrapperImpl{
-		Apikey: apikey,
-		Model:  model,
+		apiKey:  apiKey,
+		model:   model,
+		dropLen: dropLen,
 	}
 }
 
@@ -33,11 +35,11 @@ func (w StatelessWrapperImpl) Call(history []message.Message, newMessages []mess
 	}
 
 	requestBody := internal.ChatCompletionRequest{
-		Model:    w.Model,
+		Model:    w.model,
 		Messages: conversation,
 	}
 
-	wrapper := internal.NewWrapperImpl(w.Apikey)
+	wrapper := internal.NewWrapperImpl(w.apiKey, 1)
 
 	response, err := wrapper.Call(requestBody)
 	if err != nil {
@@ -47,6 +49,9 @@ func (w StatelessWrapperImpl) Call(history []message.Message, newMessages []mess
 	var responseMessages []message.Message
 
 	for _, c := range response.Choices {
+		if c.FinishReason == internal.FinishReasonLength {
+			return w.Call(history[w.dropLen:], newMessages)
+		}
 		responseMessages = append(responseMessages, message.Message{
 			Role:    c.Message.Role,
 			Content: c.Message.Content,

@@ -7,10 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 )
-
-const RateLimitWaitSeconds = 60
 
 type ChatCompletionMessage struct {
 	Role    string `json:"role"`
@@ -29,14 +26,19 @@ type ChatCompletionResponse struct {
 		Message      ChatCompletionMessage `json:"message"`
 		FinishReason string                `json:"finish_reason,omitempty"`
 	} `json:"choices,omitempty"`
+	Usage struct {
+		TotalTokens      int `json:"total_tokens,omitempty"`
+		CompletionTokens int `json:"completion_tokens,omitempty"`
+		PromptTokens     int `json:"prompt_tokens,omitempty"`
+	} `json:"usage,omitempty"`
 }
 
 type ErrorResponse struct {
 	Error struct {
-		Message string `json:"message,omitempty"`
-		Type    string `json:"type,omitempty"`
-		Param   string `json:"param,omitempty"`
-		Code    string `json:"code,omitempty"`
+		Message string      `json:"message,omitempty"`
+		Type    string      `json:"type,omitempty"`
+		Param   string      `json:"param,omitempty"`
+		Code    interface{} `json:"code,omitempty"`
 	} `json:"error,omitempty"`
 }
 
@@ -45,12 +47,14 @@ type Wrapper interface {
 }
 
 type WrapperImpl struct {
-	Apikey string
+	apiKey  string
+	dropLen int
 }
 
-func NewWrapperImpl(apikey string) WrapperImpl {
+func NewWrapperImpl(apiKey string, dropLen int) WrapperImpl {
 	return WrapperImpl{
-		Apikey: apikey,
+		apiKey:  apiKey,
+		dropLen: dropLen,
 	}
 }
 
@@ -83,7 +87,7 @@ func (w WrapperImpl) prepareRequest(requestBody ChatCompletionRequest) (*http.Re
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", w.Apikey))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", w.apiKey))
 
 	return req, nil
 }
@@ -109,22 +113,14 @@ func (w WrapperImpl) handleGptResponse(requestBody ChatCompletionRequest, resp *
 	}
 	switch resp.StatusCode {
 	case http.StatusBadRequest:
-		return w.Call(ChatCompletionRequest{
-			Model:    requestBody.Model,
-			Messages: requestBody.Messages[3:],
-		})
-	case http.StatusUnauthorized:
-		return nil, fromResponse(errorResponse)
-	case http.StatusNotFound:
-		return nil, fromResponse(errorResponse)
-	case http.StatusTooManyRequests:
-		time.Sleep(RateLimitWaitSeconds * time.Second)
-		return w.Call(requestBody)
-	case http.StatusInternalServerError:
-		return nil, fromResponse(errorResponse)
-	default:
-		return nil, fromResponse(errorResponse)
+		if errorResponse.Error.Code == errorCodeMaxTokens {
+			return w.Call(ChatCompletionRequest{
+				Model:    requestBody.Model,
+				Messages: requestBody.Messages[w.dropLen:],
+			})
+		}
 	}
+	return nil, fromResponse(errorResponse)
 }
 
 func fromResponse(e *ErrorResponse) error {
@@ -132,7 +128,7 @@ func fromResponse(e *ErrorResponse) error {
 	if e.Error.Message != "" {
 		msg = e.Error.Message
 	} else {
-		msg = e.Error.Code
+		msg = fmt.Sprintf("%v", e.Error.Code)
 	}
 	return errors.New(msg)
 }
