@@ -18,6 +18,7 @@
 !LICENSE
 
 !*.yml
+!*.json
 
 # !Makefile
 
