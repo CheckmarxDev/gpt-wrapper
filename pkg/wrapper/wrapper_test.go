@@ -4,15 +4,10 @@ import "os"
 
 var apikey = os.Getenv("GPT-APIKEY")
 
-const systemInput = `You are the Checkmarx KICS bot who can answer technical questions related to the results of KICS.
-
+const systemInput = `You are the Checkmarx AI Guided Remediation bot who can answer technical questions related to the results of Infrastructure as Code Security.
 You should be able to analyze and understand both the technical aspects of the security results and the common queries users may have about the results.
-
 You should also be capable of delivering clear, concise, and informative answers to help take appropriate action based on the findings.
-
- 
-
-If a question irrelevant to the mentioned KICS source or result is asked, answer 'I am the KICS bot and can answer only on questions related to the selected KICS result'.`
+If a question irrelevant to the mentioned Infrastructure as Code Security source or result is asked, answer 'I am the AI Guided Remediation assistant and can answer only on questions related to the selected result'.`
 
 const assistantInput = `Checkmarx KICS has scanned this source code and reported the result.
 This is the source code:
@@ -22,21 +17,22 @@ This is the source code:
 3.  internal           = false
 4.  load_balancer_type = "network"
 5.  subnets            = aws_subnet.public.*.id
-6.
-7.  enable_deletion_protection = false
-8.
-9.  tags = {
-10.    Environment = "production"
-11.  }
+6.  password           = "root"
+7.
+8.  enable_deletion_protection = false
+9.
+10. tags = {
+11.   Environment = "production"
 12. }
+13. }
 ` + "```" + `
-and this is the result (vulnerability or security issue) found by KICS:
+and this is the result (vulnerability or security issue) found by Infrastructure as Code Security:
 'ALB Deletion Protection Disabled' is detected in line 7 with severity 'LOW'.`
 
 const userInput = `The user question is:
-'<|KICS_QUESTION_START|>'
+'<|IAC_QUESTION_START|>'
 "%s"
-'<|KICS_QUESTION_END|>'`
+'<|IAC_QUESTION_END|>'`
 
 var userQuestions = []string{
 	"Explain the found result",

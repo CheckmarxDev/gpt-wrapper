@@ -2,6 +2,7 @@ package wrapper
 
 import (
 	"github.com/checkmarxDev/gpt-wrapper/internal"
+	"github.com/checkmarxDev/gpt-wrapper/internal/secrets"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/models"
 )
@@ -31,7 +32,11 @@ func (w StatelessWrapperImpl) Call(history []message.Message, newMessages []mess
 	var conversation []internal.ChatCompletionMessage
 
 	for _, m := range append(history, newMessages...) {
-		conversation = append(conversation, internal.ChatCompletionMessage{Role: m.Role, Content: m.Content})
+		maskedContent, err := secrets.MaskSecrets(m.Content)
+		if err != nil {
+			return nil, err
+		}
+		conversation = append(conversation, internal.ChatCompletionMessage{Role: m.Role, Content: maskedContent})
 	}
 
 	requestBody := internal.ChatCompletionRequest{

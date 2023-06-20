@@ -18,6 +18,10 @@
 !LICENSE
 
 !*.yml
+!*.json
+!*.yaml
+!*.tf
+!*.dockerfile
 
 # !Makefile
 
