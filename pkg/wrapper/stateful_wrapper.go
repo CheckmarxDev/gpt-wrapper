@@ -1,8 +1,10 @@
 package wrapper
 
 import (
+	"errors"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/connector"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
+	"github.com/checkmarxDev/gpt-wrapper/pkg/role"
 
 	"github.com/google/uuid"
 )
@@ -14,12 +16,14 @@ type StatefulWrapper interface {
 
 type StatefulWrapperImpl struct {
 	connector connector.Connector
+	limit     int
 	StatelessWrapper
 }
 
-func NewStatefulWrapper(storageConnector connector.Connector, apiKey, model string, dropLen int) StatefulWrapper {
+func NewStatefulWrapper(storageConnector connector.Connector, apiKey, model string, dropLen int, limit int) StatefulWrapper {
 	return StatefulWrapperImpl{
 		storageConnector,
+		limit,
 		NewStatelessWrapper(apiKey, model, dropLen),
 	}
 }
@@ -38,6 +42,19 @@ func (w StatefulWrapperImpl) Call(id uuid.UUID, newMessages []message.Message) (
 		return nil, err
 	}
 
+	allMessages := append(history, newMessages...)
+
+	userMessageCount := 0
+	for _, msg := range allMessages {
+		if msg.Role == role.User {
+			userMessageCount++
+		}
+	}
+
+	if w.limit > 0 && userMessageCount > w.limit {
+		return nil, errors.New("user message limit exceeded")
+	}
+
 	response, err = w.StatelessWrapper.Call(history, newMessages)
 	if err != nil {
 		return nil, err
@@ -46,10 +63,9 @@ func (w StatefulWrapperImpl) Call(id uuid.UUID, newMessages []message.Message) (
 		panic(response)
 	}
 
-	history = append(history, newMessages...)
-	history = append(history, response[0])
+	allMessages = append(allMessages, response[0])
 
-	err = w.connector.SaveHistory(id, history)
+	err = w.connector.SaveHistory(id, allMessages)
 	if err != nil {
 		return nil, err
 	}

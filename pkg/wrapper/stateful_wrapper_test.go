@@ -12,7 +12,7 @@ import (
 
 func TestCallGPT_FS(t *testing.T) {
 	var history []message.Message
-	wrapper := NewStatefulWrapper(connector.NewFileSystemConnector(""), apikey, models.GPT3Dot5Turbo, 4)
+	wrapper := NewStatefulWrapper(connector.NewFileSystemConnector(""), apikey, models.GPT3Dot5Turbo, 4, 0)
 	id := wrapper.GenerateId()
 	t.Log(id)
 	for _, q := range userQuestions {
