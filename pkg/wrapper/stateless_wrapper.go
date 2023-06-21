@@ -1,10 +1,12 @@
 package wrapper
 
 import (
+	"errors"
 	"github.com/checkmarxDev/gpt-wrapper/internal"
 	"github.com/checkmarxDev/gpt-wrapper/internal/secrets"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/models"
+	"github.com/checkmarxDev/gpt-wrapper/pkg/role"
 )
 
 type StatelessWrapper interface {
@@ -15,28 +17,37 @@ type StatelessWrapperImpl struct {
 	apiKey  string
 	model   string
 	dropLen int
+	limit   int
 }
 
-func NewStatelessWrapper(apiKey, model string, dropLen int) StatelessWrapper {
+func NewStatelessWrapper(apiKey, model string, dropLen, limit int) StatelessWrapper {
 	if model == "" {
 		model = models.DefaultModel
 	}
 	return StatelessWrapperImpl{
-		apiKey:  apiKey,
-		model:   model,
-		dropLen: dropLen,
+		apiKey,
+		model,
+		dropLen,
+		limit,
 	}
 }
 
 func (w StatelessWrapperImpl) Call(history []message.Message, newMessages []message.Message) ([]message.Message, error) {
 	var conversation []internal.ChatCompletionMessage
-
+	userMessageCount := 0
 	for _, m := range append(history, newMessages...) {
 		maskedContent, err := secrets.MaskSecrets(m.Content)
 		if err != nil {
 			return nil, err
 		}
 		conversation = append(conversation, internal.ChatCompletionMessage{Role: m.Role, Content: maskedContent})
+		if m.Role == role.User {
+			userMessageCount++
+		}
+	}
+
+	if w.limit > 0 && userMessageCount > w.limit {
+		return nil, errors.New("user message limit exceeded")
 	}
 
 	requestBody := internal.ChatCompletionRequest{
