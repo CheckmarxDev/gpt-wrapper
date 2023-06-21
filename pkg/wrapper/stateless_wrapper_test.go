@@ -12,7 +12,7 @@ import (
 func TestCallGPT(t *testing.T) {
 	var history []message.Message
 	var response []message.Message
-	wrapper := NewStatelessWrapper(apikey, models.GPT3Dot5Turbo, 4)
+	wrapper := NewStatelessWrapper(apikey, models.GPT3Dot5Turbo, 4, 0)
 	for _, q := range userQuestions {
 		t.Log(q)
 		var err error
@@ -47,7 +47,7 @@ func TestCallGPT(t *testing.T) {
 }
 
 func TestCallEmptyApiKey(t *testing.T) {
-	wrapper := NewStatelessWrapper("", models.GPT3Dot5Turbo, 4)
+	wrapper := NewStatelessWrapper("", models.GPT3Dot5Turbo, 4, 0)
 	q := userQuestions[0]
 	_, err := wrapper.Call(nil, []message.Message{{
 		Role:    role.User,
