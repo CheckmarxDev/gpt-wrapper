@@ -3,7 +3,6 @@ package wrapper
 import (
 	"github.com/checkmarxDev/gpt-wrapper/pkg/connector"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
-
 	"github.com/google/uuid"
 )
 
@@ -17,10 +16,10 @@ type StatefulWrapperImpl struct {
 	StatelessWrapper
 }
 
-func NewStatefulWrapper(storageConnector connector.Connector, apiKey, model string, dropLen int) StatefulWrapper {
+func NewStatefulWrapper(storageConnector connector.Connector, apiKey, model string, dropLen, limit int) StatefulWrapper {
 	return StatefulWrapperImpl{
 		storageConnector,
-		NewStatelessWrapper(apiKey, model, dropLen),
+		NewStatelessWrapper(apiKey, model, dropLen, limit),
 	}
 }
 
