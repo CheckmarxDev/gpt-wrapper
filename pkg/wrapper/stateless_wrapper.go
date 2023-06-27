@@ -11,9 +11,11 @@ import (
 
 type StatelessWrapper interface {
 	Call([]message.Message, []message.Message) ([]message.Message, error)
+	SetupCall([]message.Message)
 }
 
 type StatelessWrapperImpl struct {
+	wrapper internal.WrapperImpl
 	apiKey  string
 	model   string
 	dropLen int
@@ -25,6 +27,7 @@ func NewStatelessWrapper(apiKey, model string, dropLen, limit int) StatelessWrap
 		model = models.DefaultModel
 	}
 	return StatelessWrapperImpl{
+		internal.NewWrapperImpl(apiKey, dropLen),
 		apiKey,
 		model,
 		dropLen,
@@ -32,15 +35,19 @@ func NewStatelessWrapper(apiKey, model string, dropLen, limit int) StatelessWrap
 	}
 }
 
+func (w StatelessWrapperImpl) SetupCall(setupMessages []message.Message) {
+	w.wrapper.SetupCall(setupMessages)
+}
+
 func (w StatelessWrapperImpl) Call(history []message.Message, newMessages []message.Message) ([]message.Message, error) {
-	var conversation []internal.ChatCompletionMessage
+	var conversation []message.Message
 	userMessageCount := 0
 	for _, m := range append(history, newMessages...) {
 		maskedContent, err := secrets.MaskSecrets(m.Content)
 		if err != nil {
 			return nil, err
 		}
-		conversation = append(conversation, internal.ChatCompletionMessage{Role: m.Role, Content: maskedContent})
+		conversation = append(conversation, message.Message{Role: m.Role, Content: maskedContent})
 		if m.Role == role.User {
 			userMessageCount++
 		}
@@ -55,9 +62,7 @@ func (w StatelessWrapperImpl) Call(history []message.Message, newMessages []mess
 		Messages: conversation,
 	}
 
-	wrapper := internal.NewWrapperImpl(w.apiKey, 1)
-
-	response, err := wrapper.Call(requestBody)
+	response, err := w.wrapper.Call(requestBody)
 	if err != nil {
 		return nil, err
 	}

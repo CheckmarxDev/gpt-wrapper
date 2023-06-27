@@ -9,6 +9,7 @@ import (
 type StatefulWrapper interface {
 	GenerateId() uuid.UUID
 	Call(uuid.UUID, []message.Message) ([]message.Message, error)
+	SetupCall([]message.Message)
 }
 
 type StatefulWrapperImpl struct {
@@ -21,6 +22,10 @@ func NewStatefulWrapper(storageConnector connector.Connector, apiKey, model stri
 		storageConnector,
 		NewStatelessWrapper(apiKey, model, dropLen, limit),
 	}
+}
+
+func (w StatefulWrapperImpl) SetupCall(setupMessages []message.Message) {
+	w.StatelessWrapper.SetupCall(setupMessages)
 }
 
 func (w StatefulWrapperImpl) GenerateId() uuid.UUID {
