@@ -5,26 +5,24 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
+	"github.com/checkmarxDev/gpt-wrapper/pkg/models"
+	"github.com/checkmarxDev/gpt-wrapper/pkg/role"
 	"io"
 	"net/http"
 )
 
-type ChatCompletionMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
 type ChatCompletionRequest struct {
-	Model    string                  `json:"model"`
-	Messages []ChatCompletionMessage `json:"messages"`
+	Model    string            `json:"model"`
+	Messages []message.Message `json:"messages"`
 }
 
 type ChatCompletionResponse struct {
 	ID      string `json:"id,omitempty"`
 	Choices []struct {
-		Index        int                   `json:"index,omitempty"`
-		Message      ChatCompletionMessage `json:"message"`
-		FinishReason string                `json:"finish_reason,omitempty"`
+		Index        int             `json:"index,omitempty"`
+		Message      message.Message `json:"message"`
+		FinishReason string          `json:"finish_reason,omitempty"`
 	} `json:"choices,omitempty"`
 	Usage struct {
 		TotalTokens      int `json:"total_tokens,omitempty"`
@@ -47,8 +45,9 @@ type Wrapper interface {
 }
 
 type WrapperImpl struct {
-	apiKey  string
-	dropLen int
+	apiKey        string
+	dropLen       int
+	setupMessages []message.Message
 }
 
 func NewWrapperImpl(apiKey string, dropLen int) WrapperImpl {
@@ -58,7 +57,23 @@ func NewWrapperImpl(apiKey string, dropLen int) WrapperImpl {
 	}
 }
 
+func (w WrapperImpl) SetupCall(messages []message.Message) {
+	w.setupMessages = messages
+}
+
 func (w WrapperImpl) Call(requestBody ChatCompletionRequest) (*ChatCompletionResponse, error) {
+	if w.setupMessages != nil {
+		if requestBody.Model == models.GPT4 {
+			requestBody.Messages = append(w.setupMessages, requestBody.Messages...)
+		} else {
+			userIndex := findLastUserIndex(requestBody.Messages)
+			front := requestBody.Messages[:userIndex]
+			back := requestBody.Messages[userIndex:]
+			requestBody.Messages = append(front, w.setupMessages...)
+			requestBody.Messages = append(requestBody.Messages, back...)
+		}
+	}
+
 	req, err := w.prepareRequest(requestBody)
 	if err != nil {
 		return nil, err
@@ -131,4 +146,13 @@ func fromResponse(e *ErrorResponse) error {
 		msg = fmt.Sprintf("%v", e.Error.Code)
 	}
 	return errors.New(msg)
+}
+
+func findLastUserIndex(messages []message.Message) int {
+	for i := len(messages) - 1; i >= 0; i-- {
+		if messages[i].Role == role.User {
+			return i
+		}
+	}
+	return 0
 }
