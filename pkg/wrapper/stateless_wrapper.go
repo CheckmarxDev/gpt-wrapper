@@ -26,7 +26,7 @@ func NewStatelessWrapper(apiKey, model string, dropLen, limit int) StatelessWrap
 	if model == "" {
 		model = models.DefaultModel
 	}
-	return StatelessWrapperImpl{
+	return &StatelessWrapperImpl{
 		internal.NewWrapperImpl(apiKey, dropLen),
 		apiKey,
 		model,
@@ -35,11 +35,11 @@ func NewStatelessWrapper(apiKey, model string, dropLen, limit int) StatelessWrap
 	}
 }
 
-func (w StatelessWrapperImpl) SetupCall(setupMessages []message.Message) {
+func (w *StatelessWrapperImpl) SetupCall(setupMessages []message.Message) {
 	w.wrapper.SetupCall(setupMessages)
 }
 
-func (w StatelessWrapperImpl) Call(history []message.Message, newMessages []message.Message) ([]message.Message, error) {
+func (w *StatelessWrapperImpl) Call(history []message.Message, newMessages []message.Message) ([]message.Message, error) {
 	var conversation []message.Message
 	userMessageCount := 0
 	for _, m := range append(history, newMessages...) {

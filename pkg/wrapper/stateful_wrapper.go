@@ -18,21 +18,21 @@ type StatefulWrapperImpl struct {
 }
 
 func NewStatefulWrapper(storageConnector connector.Connector, apiKey, model string, dropLen, limit int) StatefulWrapper {
-	return StatefulWrapperImpl{
+	return &StatefulWrapperImpl{
 		storageConnector,
 		NewStatelessWrapper(apiKey, model, dropLen, limit),
 	}
 }
 
-func (w StatefulWrapperImpl) SetupCall(setupMessages []message.Message) {
+func (w *StatefulWrapperImpl) SetupCall(setupMessages []message.Message) {
 	w.StatelessWrapper.SetupCall(setupMessages)
 }
 
-func (w StatefulWrapperImpl) GenerateId() uuid.UUID {
+func (w *StatefulWrapperImpl) GenerateId() uuid.UUID {
 	return uuid.New()
 }
 
-func (w StatefulWrapperImpl) Call(id uuid.UUID, newMessages []message.Message) ([]message.Message, error) {
+func (w *StatefulWrapperImpl) Call(id uuid.UUID, newMessages []message.Message) ([]message.Message, error) {
 	var err error
 	var history []message.Message
 	var response []message.Message
