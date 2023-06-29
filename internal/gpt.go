@@ -9,7 +9,6 @@ import (
 	"github.com/checkmarxDev/gpt-wrapper/pkg/models"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/role"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -59,11 +58,7 @@ func NewWrapperImpl(apiKey string, dropLen int) WrapperImpl {
 }
 
 func (w *WrapperImpl) SetupCall(messages []message.Message) {
-	jsonData, _ := json.Marshal(messages)
-	log.Println(string(jsonData))
 	w.setupMessages = messages
-	jsonData, _ = json.Marshal(w.setupMessages)
-	log.Println(string(jsonData))
 }
 
 func (w *WrapperImpl) Call(requestBody ChatCompletionRequest) (*ChatCompletionResponse, error) {
@@ -78,8 +73,6 @@ func (w *WrapperImpl) Call(requestBody ChatCompletionRequest) (*ChatCompletionRe
 			requestBody.Messages = append(requestBody.Messages, back...)
 		}
 	}
-	jsonData, err := json.Marshal(w.setupMessages)
-	log.Println(string(jsonData))
 
 	req, err := w.prepareRequest(requestBody)
 	if err != nil {
@@ -102,7 +95,7 @@ func (w *WrapperImpl) prepareRequest(requestBody ChatCompletionRequest) (*http.R
 	if err != nil {
 		return nil, err
 	}
-	log.Println(string(jsonData))
+
 	req, err := http.NewRequest(http.MethodPost, "https://api.openai.com/v1/chat/completions", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, err
