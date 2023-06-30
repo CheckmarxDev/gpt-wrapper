@@ -57,11 +57,11 @@ func NewWrapperImpl(apiKey string, dropLen int) WrapperImpl {
 	}
 }
 
-func (w WrapperImpl) SetupCall(messages []message.Message) {
+func (w *WrapperImpl) SetupCall(messages []message.Message) {
 	w.setupMessages = messages
 }
 
-func (w WrapperImpl) Call(requestBody ChatCompletionRequest) (*ChatCompletionResponse, error) {
+func (w *WrapperImpl) Call(requestBody ChatCompletionRequest) (*ChatCompletionResponse, error) {
 	if w.setupMessages != nil {
 		if requestBody.Model == models.GPT4 {
 			requestBody.Messages = append(w.setupMessages, requestBody.Messages...)
@@ -90,7 +90,7 @@ func (w WrapperImpl) Call(requestBody ChatCompletionRequest) (*ChatCompletionRes
 	return w.handleGptResponse(requestBody, resp)
 }
 
-func (w WrapperImpl) prepareRequest(requestBody ChatCompletionRequest) (*http.Request, error) {
+func (w *WrapperImpl) prepareRequest(requestBody ChatCompletionRequest) (*http.Request, error) {
 	jsonData, err := json.Marshal(requestBody)
 	if err != nil {
 		return nil, err
@@ -107,7 +107,7 @@ func (w WrapperImpl) prepareRequest(requestBody ChatCompletionRequest) (*http.Re
 	return req, nil
 }
 
-func (w WrapperImpl) handleGptResponse(requestBody ChatCompletionRequest, resp *http.Response) (*ChatCompletionResponse, error) {
+func (w *WrapperImpl) handleGptResponse(requestBody ChatCompletionRequest, resp *http.Response) (*ChatCompletionResponse, error) {
 	var err error
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
