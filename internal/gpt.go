@@ -135,16 +135,19 @@ func (w *WrapperImpl) handleGptResponse(requestBody ChatCompletionRequest, resp 
 			})
 		}
 	}
-	return nil, fromResponse(errorResponse)
+	return nil, fromResponse(resp.StatusCode, errorResponse)
 }
 
-func fromResponse(e *ErrorResponse) error {
+func fromResponse(statusCode int, e *ErrorResponse) error {
 	var msg string
 	if e.Error.Message != "" {
 		msg = e.Error.Message
 	} else {
 		msg = fmt.Sprintf("%v", e.Error.Code)
 	}
+
+	msg = fmt.Sprintf("Error Code: %d, %s", statusCode, msg)
+
 	return errors.New(msg)
 }
 
