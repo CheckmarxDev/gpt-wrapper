@@ -138,7 +138,6 @@ func (w *WrapperImpl) handleGptResponse(requestBody ChatCompletionRequest, resp 
 	return nil, fromResponse(resp.StatusCode, errorResponse)
 }
 
-// Add statusCode argument to fromResponse
 func fromResponse(statusCode int, e *ErrorResponse) error {
 	var msg string
 	if e.Error.Message != "" {
@@ -147,7 +146,6 @@ func fromResponse(statusCode int, e *ErrorResponse) error {
 		msg = fmt.Sprintf("%v", e.Error.Code)
 	}
 
-	// Use HTTP status code instead of e.Error.Code
 	msg = fmt.Sprintf("Error Code: %d, %s", statusCode, msg)
 
 	return errors.New(msg)
