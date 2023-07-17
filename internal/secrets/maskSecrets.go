@@ -215,10 +215,10 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 					startOfMatch = re.SpecialMask.FindString(line)
 					// Add the masked string to return
 					maskedSecretElement.Secret = line //line[len(startOfMatch):]
-					maskedSecrets = append(maskedSecrets, maskedSecretElement)
 				}
 				maskedSecret := fmt.Sprintf("%s<masked>", startOfMatch)
 				maskedSecretElement.Masked = maskedSecret
+				maskedSecrets = append(maskedSecrets, maskedSecretElement)
 				results = append(results, Result{QueryName: "Passwords And Secrets - " + re.QueryName, Line: index + 1, FileName: fileName, Severity: "HIGH"})
 				return maskedSecret
 			})
