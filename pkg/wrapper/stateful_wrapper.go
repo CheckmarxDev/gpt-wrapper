@@ -12,7 +12,7 @@ type StatefulWrapper interface {
 	GenerateId() uuid.UUID
 	Call(uuid.UUID, []message.Message) ([]message.Message, error)
 	SetupCall([]message.Message)
-	MaskSecrets(fileContent string) (string, []maskedSecret.MaskedSecret, error)
+	MaskSecrets(fileContent string) (*maskedSecret.MaskedEntry, error)
 }
 
 type StatefulWrapperImpl struct {
@@ -64,10 +64,13 @@ func (w *StatefulWrapperImpl) Call(id uuid.UUID, newMessages []message.Message) 
 	return response, nil
 }
 
-func (w *StatefulWrapperImpl) MaskSecrets(fileContent string) (string, []maskedSecret.MaskedSecret, error) {
+func (w *StatefulWrapperImpl) MaskSecrets(fileContent string) (*maskedSecret.MaskedEntry, error) {
 	maskedFile, maskedSecrets, err := secrets.MaskSecrets(fileContent)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
-	return maskedFile, maskedSecrets, nil
+	var maskedEntry = maskedSecret.MaskedEntry{}
+	maskedEntry.MaskedFile = maskedFile
+	maskedEntry.MaskedSecrets = maskedSecrets
+	return &maskedEntry, nil
 }

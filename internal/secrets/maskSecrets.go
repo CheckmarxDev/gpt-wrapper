@@ -214,7 +214,7 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 				if re.SpecialMask != nil {
 					startOfMatch = re.SpecialMask.FindString(line)
 					// Add the masked string to return
-					maskedSecretElement.Secret = line //line[len(startOfMatch):]
+					maskedSecretElement.Secret = line
 				}
 				maskedSecret := fmt.Sprintf("%s<masked>", startOfMatch)
 				maskedSecretElement.Masked = maskedSecret
