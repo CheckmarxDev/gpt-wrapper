@@ -63,6 +63,11 @@ type Result struct {
 	Severity  string `json:"severity"`
 }
 
+type MaskedSecrets struct {
+	Masked string `json:"masked"`
+	Secret string `json:"secret"`
+}
+
 // LoadRegexps Load custom regexps
 func LoadRegexps() ([]SecretRegex, []*regexp.Regexp, error) {
 	var allowRulesRegexes []*regexp.Regexp
@@ -178,9 +183,9 @@ func calculateEntropy(token, charSet string) float64 {
 }
 
 // ReplaceMatches If matches between the regex and the file content, then replace the match with the string "<masked>"
-func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowRegexes []*regexp.Regexp) (string, []Result) {
+func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowRegexes []*regexp.Regexp) (string, []Result, []MaskedSecrets) {
 	var results []Result
-
+	var maskedSecrets []MaskedSecrets
 	var multilineRegexes []SecretRegex
 
 	lines := strings.Split(strings.ReplaceAll(result, "\r\n", "\n"), "\n")
@@ -199,7 +204,6 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 				}
 
 				groups := re.Regex.FindAllStringSubmatch(result, -1)
-
 				for _, entropy := range re.Entropies {
 					if len(groups) < entropy.Group {
 						if ok, _ := CheckEntropyInterval(entropy, groups[0][entropy.Group]); !ok {
@@ -211,6 +215,11 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 				startOfMatch := ""
 				if re.SpecialMask != nil {
 					startOfMatch = re.SpecialMask.FindString(line)
+					// Add the masked string to return
+					maskedSecretElement := MaskedSecrets{}
+					maskedSecretElement.Secret = line[len(startOfMatch):]
+					maskedSecretElement.Masked = "<masked>"
+					maskedSecrets = append(maskedSecrets, maskedSecretElement)
 				}
 				maskedSecret := fmt.Sprintf("%s<masked>", startOfMatch)
 				results = append(results, Result{QueryName: "Passwords And Secrets - " + re.QueryName, Line: index + 1, FileName: fileName, Severity: "HIGH"})
@@ -262,25 +271,33 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 			}
 			maskedSecret := fmt.Sprintf("%s<masked>", startOfMatch)
 
+
+
 			results = append(results, Result{QueryName: "Passwords And Secrets - " + re.QueryName, Line: lineOfSecret, FileName: fileName, Severity: "HIGH"})
 
 			maskedMatchString := strings.Replace(matchString, stringToMask, maskedSecret, 1)
+
+			// Add the masked string to return
+			maskedSecretElement := MaskedSecrets{}
+			maskedSecretElement.Masked = "<masked>"
+			maskedSecretElement.Secret = stringToMask
+			maskedSecrets = append(maskedSecrets, maskedSecretElement)
 
 			result = strings.Replace(result, matchString, maskedMatchString, 1)
 
 			groups = re.Regex.FindStringSubmatchIndex(result)
 		}
 	}
-	return result, results
+	return result, results, maskedSecrets
 }
 
-func MaskSecrets(fileContent string) (string, error) {
+func MaskSecrets(fileContent string) (string, []MaskedSecrets, error) {
 	// Load regexps
 	rs, allowRs, err := LoadRegexps()
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
-	maskedResult, _ := ReplaceMatches("", fileContent, rs, allowRs)
-	return maskedResult, nil
+	maskedResult, _, maskedSecrets := ReplaceMatches("", fileContent, rs, allowRs)
+	return maskedResult, maskedSecrets, nil
 }
