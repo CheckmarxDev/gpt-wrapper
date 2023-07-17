@@ -7,6 +7,8 @@ import (
 	"math"
 	"regexp"
 	"strings"
+
+	"github.com/checkmarxDev/gpt-wrapper/pkg/maskedSecret"
 )
 
 const (
@@ -61,11 +63,6 @@ type Result struct {
 	Line      int    `json:"line"`
 	FileName  string `json:"fileName"`
 	Severity  string `json:"severity"`
-}
-
-type MaskedSecrets struct {
-	Masked string `json:"masked"`
-	Secret string `json:"secret"`
 }
 
 // LoadRegexps Load custom regexps
@@ -183,9 +180,9 @@ func calculateEntropy(token, charSet string) float64 {
 }
 
 // ReplaceMatches If matches between the regex and the file content, then replace the match with the string "<masked>"
-func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowRegexes []*regexp.Regexp) (string, []Result, []MaskedSecrets) {
+func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowRegexes []*regexp.Regexp) (string, []Result, []maskedSecret.MaskedSecret) {
 	var results []Result
-	var maskedSecrets []MaskedSecrets
+	var maskedSecrets []maskedSecret.MaskedSecret
 	var multilineRegexes []SecretRegex
 
 	lines := strings.Split(strings.ReplaceAll(result, "\r\n", "\n"), "\n")
@@ -216,7 +213,7 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 				if re.SpecialMask != nil {
 					startOfMatch = re.SpecialMask.FindString(line)
 					// Add the masked string to return
-					maskedSecretElement := MaskedSecrets{}
+					maskedSecretElement := maskedSecret.MaskedSecret{}
 					maskedSecretElement.Secret = line[len(startOfMatch):]
 					maskedSecretElement.Masked = "<masked>"
 					maskedSecrets = append(maskedSecrets, maskedSecretElement)
@@ -234,6 +231,7 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 
 		// Iterate over each match
 		for groups != nil {
+			maskedSecretElement := maskedSecret.MaskedSecret{}
 			firstLine := getLineNumber(result, groups[0])
 			lastLine := getLineNumber(result, groups[1])
 			fullContext := getLines(result, firstLine, lastLine)
@@ -278,7 +276,6 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 			maskedMatchString := strings.Replace(matchString, stringToMask, maskedSecret, 1)
 
 			// Add the masked string to return
-			maskedSecretElement := MaskedSecrets{}
 			maskedSecretElement.Masked = "<masked>"
 			maskedSecretElement.Secret = stringToMask
 			maskedSecrets = append(maskedSecrets, maskedSecretElement)
@@ -291,7 +288,7 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 	return result, results, maskedSecrets
 }
 
-func MaskSecrets(fileContent string) (string, []MaskedSecrets, error) {
+func MaskSecrets(fileContent string) (string, []maskedSecret.MaskedSecret, error) {
 	// Load regexps
 	rs, allowRs, err := LoadRegexps()
 	if err != nil {
