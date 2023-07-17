@@ -1,6 +1,7 @@
 package wrapper
 
 import (
+	"github.com/checkmarxDev/gpt-wrapper/internal/secrets"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/connector"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
 	"github.com/google/uuid"
@@ -10,6 +11,7 @@ type StatefulWrapper interface {
 	GenerateId() uuid.UUID
 	Call(uuid.UUID, []message.Message) ([]message.Message, error)
 	SetupCall([]message.Message)
+	MaskSecrets(fileContent string) (string, []secrets.MaskedSecrets, error)
 }
 
 type StatefulWrapperImpl struct {
@@ -59,4 +61,12 @@ func (w *StatefulWrapperImpl) Call(id uuid.UUID, newMessages []message.Message) 
 	}
 
 	return response, nil
+}
+
+func (w *StatefulWrapperImpl) MaskSecrets(fileContent string) (string, []secrets.MaskedSecrets, error) {
+	maskedFile, maskedSecrets, err := secrets.MaskSecrets(fileContent)
+	if err != nil {
+		return "", nil, err
+	}
+	return maskedFile, maskedSecrets, nil
 }

@@ -43,7 +43,7 @@ func (w *StatelessWrapperImpl) Call(history []message.Message, newMessages []mes
 	var conversation []message.Message
 	userMessageCount := 0
 	for _, m := range append(history, newMessages...) {
-		maskedContent, err := secrets.MaskSecrets(m.Content)
+		maskedContent, _, err := secrets.MaskSecrets(m.Content)
 		if err != nil {
 			return nil, err
 		}
