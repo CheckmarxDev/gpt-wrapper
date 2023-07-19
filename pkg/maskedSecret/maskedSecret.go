@@ -7,5 +7,5 @@ type MaskedSecret struct {
 
 type MaskedEntry struct {
 	MaskedSecrets []MaskedSecret `json:"maskedSecrets"`
-	MaskedFile string `json:"maskedFile"`
+	MaskedFile    string         `json:"maskedFile"`
 }
