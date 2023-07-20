@@ -1,7 +1,6 @@
 package wrapper
 
 import (
-	"github.com/checkmarxDev/gpt-wrapper/internal/secrets"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/connector"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/maskedSecret"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
@@ -65,12 +64,9 @@ func (w *StatefulWrapperImpl) Call(id uuid.UUID, newMessages []message.Message) 
 }
 
 func (w *StatefulWrapperImpl) MaskSecrets(fileContent string) (*maskedSecret.MaskedEntry, error) {
-	maskedFile, maskedSecrets, err := secrets.MaskSecrets(fileContent)
+	maskedSecrets, err := w.StatelessWrapper.MaskSecrets(fileContent)
 	if err != nil {
 		return nil, err
 	}
-	var maskedEntry = maskedSecret.MaskedEntry{}
-	maskedEntry.MaskedFile = maskedFile
-	maskedEntry.MaskedSecrets = maskedSecrets
-	return &maskedEntry, nil
+	return maskedSecrets, nil
 }

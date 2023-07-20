@@ -2,8 +2,10 @@ package wrapper
 
 import (
 	"errors"
+
 	"github.com/checkmarxDev/gpt-wrapper/internal"
 	"github.com/checkmarxDev/gpt-wrapper/internal/secrets"
+	"github.com/checkmarxDev/gpt-wrapper/pkg/maskedSecret"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/models"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/role"
@@ -12,6 +14,7 @@ import (
 type StatelessWrapper interface {
 	Call([]message.Message, []message.Message) ([]message.Message, error)
 	SetupCall([]message.Message)
+	MaskSecrets(fileContent string) (*maskedSecret.MaskedEntry, error)
 }
 
 type StatelessWrapperImpl struct {
@@ -80,4 +83,15 @@ func (w *StatelessWrapperImpl) Call(history []message.Message, newMessages []mes
 	}
 
 	return responseMessages, nil
+}
+
+func (w *StatelessWrapperImpl) MaskSecrets(fileContent string) (*maskedSecret.MaskedEntry, error) {
+	maskedFile, maskedSecrets, err := secrets.MaskSecrets(fileContent)
+	if err != nil {
+		return nil, err
+	}
+	var maskedEntry = maskedSecret.MaskedEntry{}
+	maskedEntry.MaskedFile = maskedFile
+	maskedEntry.MaskedSecrets = maskedSecrets
+	return &maskedEntry, nil
 }
