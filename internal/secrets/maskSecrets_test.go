@@ -64,7 +64,7 @@ func processFile(t *testing.T, path string, rs []SecretRegex, allowrs []*regexp.
 		t.Fatal(err)
 	}
 
-	_, res := ReplaceMatches(path, string(fileContent), rs, allowrs)
+	_, res, _ := ReplaceMatches(path, string(fileContent), rs, allowrs)
 
 	return res
 

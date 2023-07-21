@@ -48,3 +48,16 @@ func TestCallGPT_FS(t *testing.T) {
 		t.Logf("%s\n\n%s\n\n", m.Role, m.Content)
 	}
 }
+
+func TestMaskSecrets(t *testing.T) {
+	wrapper := NewStatefulWrapper(connector.NewFileSystemConnector(""), apikey, models.GPT3Dot5Turbo, 4, 0)
+	id := wrapper.GenerateId()
+	t.Log(id)
+	entries, err := wrapper.MaskSecrets("password=exposed")
+	if err != nil {
+		return
+	}
+	if len(entries.MaskedSecrets) > 0 {
+		t.Logf("secret: %s, masked: %s, line: %d\n", entries.MaskedSecrets[0].Secret, entries.MaskedSecrets[0].Masked, entries.MaskedSecrets[0].Line)
+	}
+}

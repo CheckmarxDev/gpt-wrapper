@@ -7,6 +7,8 @@ import (
 	"math"
 	"regexp"
 	"strings"
+
+	"github.com/checkmarxDev/gpt-wrapper/pkg/maskedSecret"
 )
 
 const (
@@ -178,9 +180,9 @@ func calculateEntropy(token, charSet string) float64 {
 }
 
 // ReplaceMatches If matches between the regex and the file content, then replace the match with the string "<masked>"
-func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowRegexes []*regexp.Regexp) (string, []Result) {
+func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowRegexes []*regexp.Regexp) (string, []Result, []maskedSecret.MaskedSecret) {
 	var results []Result
-
+	var maskedSecrets []maskedSecret.MaskedSecret
 	var multilineRegexes []SecretRegex
 
 	lines := strings.Split(strings.ReplaceAll(result, "\r\n", "\n"), "\n")
@@ -191,6 +193,8 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 			continue
 		}
 		for index, line := range lines {
+
+			originalLine := lines[index]
 			lines[index] = re.Regex.ReplaceAllStringFunc(line, func(match string) string {
 				for _, allowRule := range append(re.AllowRules, allowRegexes...) {
 					if allowRule.FindString(line) != "" {
@@ -199,7 +203,6 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 				}
 
 				groups := re.Regex.FindAllStringSubmatch(result, -1)
-
 				for _, entropy := range re.Entropies {
 					if len(groups) < entropy.Group {
 						if ok, _ := CheckEntropyInterval(entropy, groups[0][entropy.Group]); !ok {
@@ -216,6 +219,14 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 				results = append(results, Result{QueryName: "Passwords And Secrets - " + re.QueryName, Line: index + 1, FileName: fileName, Severity: "HIGH"})
 				return maskedSecret
 			})
+			if originalLine != lines[index] {
+				// Add the masked string to return
+				maskedSecretElement := maskedSecret.MaskedSecret{}
+				maskedSecretElement.Secret = originalLine
+				maskedSecretElement.Masked = lines[index]
+				maskedSecretElement.Line = index
+				maskedSecrets = append(maskedSecrets, maskedSecretElement)
+			}
 		}
 	}
 	result = strings.Join(lines[:], "\n")
@@ -225,6 +236,7 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 
 		// Iterate over each match
 		for groups != nil {
+			maskedSecretElement := maskedSecret.MaskedSecret{}
 			firstLine := getLineNumber(result, groups[0])
 			lastLine := getLineNumber(result, groups[1])
 			fullContext := getLines(result, firstLine, lastLine)
@@ -266,21 +278,28 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 
 			maskedMatchString := strings.Replace(matchString, stringToMask, maskedSecret, 1)
 
+			// Add the masked string to return
+			maskedSecretElement.Masked = maskedMatchString
+			maskedSecretElement.Secret = matchString
+			maskedSecretElement.Line = firstLine
+
+			maskedSecrets = append(maskedSecrets, maskedSecretElement)
+
 			result = strings.Replace(result, matchString, maskedMatchString, 1)
 
 			groups = re.Regex.FindStringSubmatchIndex(result)
 		}
 	}
-	return result, results
+	return result, results, maskedSecrets
 }
 
-func MaskSecrets(fileContent string) (string, error) {
+func MaskSecrets(fileContent string) (string, []maskedSecret.MaskedSecret, error) {
 	// Load regexps
 	rs, allowRs, err := LoadRegexps()
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
-	maskedResult, _ := ReplaceMatches("", fileContent, rs, allowRs)
-	return maskedResult, nil
+	maskedResult, _, maskedSecrets := ReplaceMatches("", fileContent, rs, allowRs)
+	return maskedResult, maskedSecrets, nil
 }
