@@ -58,6 +58,6 @@ func TestMaskSecrets(t *testing.T) {
 		return
 	}
 	if len(entries.MaskedSecrets) > 0 {
-		t.Logf("secret: %s, masked : %s \n", entries.MaskedSecrets[0].Secret, entries.MaskedSecrets[0].Masked)
+		t.Logf("secret: %s, masked: %s, line: %d\n", entries.MaskedSecrets[0].Secret, entries.MaskedSecrets[0].Masked, entries.MaskedSecrets[0].Line)
 	}
 }

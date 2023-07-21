@@ -224,6 +224,7 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 				maskedSecretElement := maskedSecret.MaskedSecret{}
 				maskedSecretElement.Secret = originalLine
 				maskedSecretElement.Masked = lines[index]
+				maskedSecretElement.Line = index
 				maskedSecrets = append(maskedSecrets, maskedSecretElement)
 			}
 		}
@@ -280,6 +281,8 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 			// Add the masked string to return
 			maskedSecretElement.Masked = maskedMatchString
 			maskedSecretElement.Secret = matchString
+			maskedSecretElement.Line = firstLine
+
 			maskedSecrets = append(maskedSecrets, maskedSecretElement)
 
 			result = strings.Replace(result, matchString, maskedMatchString, 1)
