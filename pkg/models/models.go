@@ -1,6 +1,7 @@
 package models
 
 const (
+	GPT4Turbo          = "gpt-4-1106-preview"
 	GPT4               = "gpt-4"
 	GPT432K            = "gpt-4-32k"
 	GPT432K0314        = "gpt-4-32k-0314"
@@ -10,5 +11,5 @@ const (
 	GPT3TextDavinci001 = "text-davinci-001"
 	GPT3TextDavinci002 = "text-davinci-002"
 	GPT3TextDavinci003 = "text-davinci-003"
-	DefaultModel       = GPT4
+	DefaultModel       = GPT4Turbo
 )
