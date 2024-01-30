@@ -3,7 +3,6 @@ package secrets
 import (
 	_ "embed"
 	"encoding/json"
-	"fmt"
 	"math"
 	"regexp"
 	"strings"
@@ -37,11 +36,11 @@ type AllowRule struct {
 type SecretRule struct {
 	ID          string      `json:"id"`
 	Name        string      `json:"name"`
+	Multiline   bool        `json:"multiline"`
 	Regex       string      `json:"regex"`
 	Entropies   []Entropy   `json:"entropies"`
-	Multiline   Multiline   `json:"multiline"`
 	AllowRules  []AllowRule `json:"allowRules"`
-	SpecialMask string      `json:"specialMask"`
+	GroupToMask int         `json:"groupMask"`
 }
 
 type SecretRules struct {
@@ -52,10 +51,11 @@ type SecretRules struct {
 type SecretRegex struct {
 	QueryName   string
 	Regex       *regexp.Regexp
-	Multiline   Multiline
+	RegexStr    string
+	Multiline   bool
+	GroupToMask int
 	Entropies   []Entropy
 	AllowRules  []*regexp.Regexp
-	SpecialMask *regexp.Regexp
 }
 
 type Result struct {
@@ -78,7 +78,6 @@ func LoadRegexps() ([]SecretRegex, []*regexp.Regexp, error) {
 	var regexes []SecretRegex
 	for _, regexStruct := range secretRules.Rules {
 		regex := regexStruct.Regex
-		specialMask := regexStruct.SpecialMask
 		var allowRules []*regexp.Regexp
 
 		for _, rule := range regexStruct.AllowRules {
@@ -88,12 +87,6 @@ func LoadRegexps() ([]SecretRegex, []*regexp.Regexp, error) {
 			}
 		}
 
-		var specialMaskCompiled *regexp.Regexp
-		if specialMask == "" {
-			specialMaskCompiled = nil
-		} else {
-			specialMaskCompiled, _ = regexp.Compile(specialMask)
-		}
 		regexCompiled, _ := regexp.Compile(regex)
 
 		secretRegex := &SecretRegex{
@@ -102,7 +95,8 @@ func LoadRegexps() ([]SecretRegex, []*regexp.Regexp, error) {
 			AllowRules:  allowRules,
 			Multiline:   regexStruct.Multiline,
 			Entropies:   regexStruct.Entropies,
-			SpecialMask: specialMaskCompiled,
+			GroupToMask: regexStruct.GroupToMask,
+			RegexStr:    regexStruct.Regex,
 		}
 		regexes = append(regexes, *secretRegex)
 	}
@@ -118,29 +112,15 @@ func LoadRegexps() ([]SecretRegex, []*regexp.Regexp, error) {
 }
 
 // getLineNumber calculates the line number based on the match index
-func getLineNumber(str string, index int) int {
+func getLineNumber(text, portion string) int {
+	index := strings.Index(text, portion) + 1
 	lineNumber := 1
 	for i := 0; i < index; i++ {
-		if str[i] == '\n' && i != index-1 {
+		if text[i] == '\n' && i != index-1 {
 			lineNumber++
 		}
 	}
 	return lineNumber
-}
-
-func getLines(str string, firstLine int, lastLine int) string {
-	lineNumber := 1
-	var returnLines []byte
-	for i := 0; i < len(str) && lineNumber <= lastLine; i++ {
-		if lineNumber >= firstLine && (str[i] != '\n' || lineNumber < lastLine) {
-			returnLines = append(returnLines, str[i])
-		}
-		if str[i] == '\n' {
-			lineNumber++
-		}
-
-	}
-	return string(returnLines)
 }
 
 // CheckEntropyInterval - verifies if a given token's entropy is within expected bounds
@@ -179,6 +159,54 @@ func calculateEntropy(token, charSet string) float64 {
 	return math.Log2(length) - freq/length
 }
 
+// maskRegexByMatchGroup masks a content using a regex and the group to be masked
+func maskRegexByMatchGroup(groupToMask int, matchContent string, query *SecretRegex) string {
+	query.Regex = regexp.MustCompile(".*" + query.RegexStr) // add .* to match the last appearance
+	groups := query.Regex.FindAllStringSubmatch(matchContent, -1)
+	lastMatch := groups[len(groups)-1]
+	if len(lastMatch) < groupToMask {
+		return matchContent
+	}
+	return strings.Replace(matchContent, lastMatch[groupToMask], "<masked>", 1)
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// IsAllowRule check if string matches any of the allow rules for the secret queries
+func IsAllowRule(s string, query *SecretRegex, allowRules []*regexp.Regexp) bool {
+	query.Regex = regexp.MustCompile(query.RegexStr)
+	regexMatch := query.Regex.FindStringIndex(s)
+	if regexMatch != nil {
+		allowRuleMatches := AllowRuleMatches(s, append(query.AllowRules, allowRules...))
+
+		for _, allowMatch := range allowRuleMatches {
+			allowStart, allowEnd := allowMatch[0], allowMatch[1]
+			regexStart, regexEnd := regexMatch[0], regexMatch[1]
+
+			if (allowStart <= regexEnd && allowStart >= regexStart) || (regexStart <= allowEnd && regexStart >= allowStart) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// AllowRuleMatches return all the allow rules matches for the secret queries
+func AllowRuleMatches(s string, allowRules []*regexp.Regexp) [][]int {
+	allowRuleMatches := [][]int{}
+	for i := range allowRules {
+		res := allowRules[i].FindAllStringIndex(s, -1)
+		allowRuleMatches = append(allowRuleMatches, res...)
+	}
+	return allowRuleMatches
+}
+
 // ReplaceMatches If matches between the regex and the file content, then replace the match with the string "<masked>"
 func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowRegexes []*regexp.Regexp) (string, []Result, []maskedSecret.MaskedSecret) {
 	var results []Result
@@ -188,20 +216,17 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 	lines := strings.Split(strings.ReplaceAll(result, "\r\n", "\n"), "\n")
 	// Replace matches
 	for _, re := range regexs {
-		if re.Multiline.DetectLineGroup != 0 {
+		if re.Multiline {
 			multilineRegexes = append(multilineRegexes, re)
 			continue
 		}
 		for index, line := range lines {
-
 			originalLine := lines[index]
 			lines[index] = re.Regex.ReplaceAllStringFunc(line, func(match string) string {
-				for _, allowRule := range append(re.AllowRules, allowRegexes...) {
-					if allowRule.FindString(line) != "" {
-						return match
-					}
+				if IsAllowRule(line, &re, append(re.AllowRules, allowRegexes...)) {
+					return match
 				}
-
+				re.Regex = regexp.MustCompile(re.RegexStr)
 				groups := re.Regex.FindAllStringSubmatch(result, -1)
 				for _, entropy := range re.Entropies {
 					if len(groups) < entropy.Group {
@@ -211,11 +236,7 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 					}
 				}
 
-				startOfMatch := ""
-				if re.SpecialMask != nil {
-					startOfMatch = re.SpecialMask.FindString(line)
-				}
-				maskedSecret := fmt.Sprintf("%s<masked>", startOfMatch)
+				maskedSecret := maskRegexByMatchGroup(re.GroupToMask, match, &re)
 				results = append(results, Result{QueryName: "Passwords And Secrets - " + re.QueryName, Line: index + 1, FileName: fileName, Severity: "HIGH"})
 				return maskedSecret
 			})
@@ -232,14 +253,13 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 	result = strings.Join(lines[:], "\n")
 	for _, re := range multilineRegexes {
 		// Find all matches of the regular expression in the string
-		groups := re.Regex.FindStringSubmatchIndex(result)
+		re.Regex = regexp.MustCompile(re.RegexStr)
+		groups := re.Regex.FindStringSubmatch(result)
 
 		// Iterate over each match
 		for groups != nil {
 			maskedSecretElement := maskedSecret.MaskedSecret{}
-			firstLine := getLineNumber(result, groups[0])
-			lastLine := getLineNumber(result, groups[1])
-			fullContext := getLines(result, firstLine, lastLine)
+			fullContext := groups[0]
 			allowed := false
 
 			for _, allowRule := range append(re.AllowRules, allowRegexes...) {
@@ -254,40 +274,23 @@ func ReplaceMatches(fileName string, result string, regexs []SecretRegex, allowR
 			}
 
 			// Extract the matched substring
-			matchString := result[groups[0]:groups[1]]
+			matchString := groups[0]
 
-			if len(groups) <= re.Multiline.DetectLineGroup*2 {
-				groups = nil
-				continue
-			}
+			lineOfSecret := getLineNumber(result, groups[re.GroupToMask])
 
-			stringToMask := result[groups[re.Multiline.DetectLineGroup*2]:groups[re.Multiline.DetectLineGroup*2+1]]
-			lineOfSecret := getLineNumber(result, groups[re.Multiline.DetectLineGroup*2])
-
-			startOfMatch := ""
-			if re.SpecialMask != nil {
-				partOfMatches := re.SpecialMask.FindAllStringIndex(stringToMask, -1)
-				if len(partOfMatches) != 0 {
-					partOfMatch := partOfMatches[len(partOfMatches)-1]
-					startOfMatch = stringToMask[0:partOfMatch[1]]
-				}
-			}
-			maskedSecret := fmt.Sprintf("%s<masked>", startOfMatch)
-
+			maskedMatchString := maskRegexByMatchGroup(re.GroupToMask, matchString, &re)
 			results = append(results, Result{QueryName: "Passwords And Secrets - " + re.QueryName, Line: lineOfSecret, FileName: fileName, Severity: "HIGH"})
-
-			maskedMatchString := strings.Replace(matchString, stringToMask, maskedSecret, 1)
 
 			// Add the masked string to return
 			maskedSecretElement.Masked = maskedMatchString
 			maskedSecretElement.Secret = matchString
-			maskedSecretElement.Line = firstLine
+			maskedSecretElement.Line = lineOfSecret
 
 			maskedSecrets = append(maskedSecrets, maskedSecretElement)
 
 			result = strings.Replace(result, matchString, maskedMatchString, 1)
 
-			groups = re.Regex.FindStringSubmatchIndex(result)
+			groups = re.Regex.FindStringSubmatch(result)
 		}
 	}
 	return result, results, maskedSecrets
