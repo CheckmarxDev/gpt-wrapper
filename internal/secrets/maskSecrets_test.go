@@ -5,12 +5,14 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/rs/zerolog/log"
 )
 
 func TestSecretsDetection(t *testing.T) {
-
 	expectedResultsPath := "test/positive_expected_result.json"
 	expectedResults, err := os.ReadFile(expectedResultsPath)
 	if err != nil {
@@ -47,7 +49,7 @@ func TestSecretsDetection(t *testing.T) {
 	}
 
 	for _, ree := range rs {
-		if ree.Multiline.DetectLineGroup != 0 {
+		if ree.Multiline {
 			multiLineQueries = append(multiLineQueries, ree.QueryName)
 		}
 	}
@@ -58,7 +60,6 @@ func TestSecretsDetection(t *testing.T) {
 }
 
 func processFile(t *testing.T, path string, rs []SecretRegex, allowrs []*regexp.Regexp) []Result {
-
 	fileContent, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
@@ -70,8 +71,29 @@ func processFile(t *testing.T, path string, rs []SecretRegex, allowrs []*regexp.
 
 }
 
+func diffActualExpectedVulnerabilities(actual, expected []Result) []string {
+	m := make(map[string]bool)
+	diff := make([]string, 0)
+	for i := range expected {
+		m[expected[i].QueryName+":"+filepath.Base(expected[i].FileName)+":"+strconv.Itoa(expected[i].Line)] = true
+	}
+	for i := range actual {
+		if _, ok := m[actual[i].QueryName+":"+filepath.Base(actual[i].FileName)+":"+strconv.Itoa(actual[i].Line)]; !ok {
+			diff = append(diff, actual[i].FileName+":"+strconv.Itoa(actual[i].Line))
+		}
+	}
+
+	return diff
+}
+
 func compareExpectedWithActual(expected, actual []Result, multiLineQueries []string) bool {
 	if len(expected) != len(actual) {
+		log.Error().Msgf(
+			"Count of actual issues and expected vulnerabilities doesn't match\n -- \n"+
+				"not present in expected and present in actual: %v\n"+
+				"not present in actual and present in expected: %v\n",
+			diffActualExpectedVulnerabilities(actual, expected),
+			diffActualExpectedVulnerabilities(expected, actual))
 		return false
 	}
 
