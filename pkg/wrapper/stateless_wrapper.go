@@ -19,7 +19,6 @@ type StatelessWrapper interface {
 
 type StatelessWrapperImpl struct {
 	wrapper internal.WrapperImpl
-	apiKey  string
 	model   string
 	dropLen int
 	limit   int
@@ -31,7 +30,6 @@ func NewStatelessWrapper(apiKey, model string, dropLen, limit int) StatelessWrap
 	}
 	return &StatelessWrapperImpl{
 		internal.NewWrapperImpl(apiKey, dropLen),
-		apiKey,
 		model,
 		dropLen,
 		limit,
