@@ -18,18 +18,18 @@ type StatelessWrapper interface {
 }
 
 type StatelessWrapperImpl struct {
-	wrapper internal.WrapperImpl
+	wrapper internal.Wrapper
 	model   string
 	dropLen int
 	limit   int
 }
 
-func NewStatelessWrapper(apiKey, model string, dropLen, limit int) StatelessWrapper {
+func NewStatelessWrapper(endPoint, apiKey, model string, dropLen, limit int) StatelessWrapper {
 	if model == "" {
 		model = models.DefaultModel
 	}
 	return &StatelessWrapperImpl{
-		internal.NewWrapperImpl(apiKey, dropLen),
+		internal.NewWrapperFactory(endPoint, apiKey, dropLen),
 		model,
 		dropLen,
 		limit,

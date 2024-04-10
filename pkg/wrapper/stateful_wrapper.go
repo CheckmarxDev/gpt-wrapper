@@ -19,10 +19,10 @@ type StatefulWrapperImpl struct {
 	StatelessWrapper
 }
 
-func NewStatefulWrapper(storageConnector connector.Connector, apiKey, model string, dropLen, limit int) StatefulWrapper {
+func NewStatefulWrapper(storageConnector connector.Connector, endpoint, apiKey, model string, dropLen, limit int) StatefulWrapper {
 	return &StatefulWrapperImpl{
 		storageConnector,
-		NewStatelessWrapper(apiKey, model, dropLen, limit),
+		NewStatelessWrapper(endpoint, apiKey, model, dropLen, limit),
 	}
 }
 
