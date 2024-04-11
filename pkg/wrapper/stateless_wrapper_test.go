@@ -12,7 +12,7 @@ import (
 func TestCallGPT(t *testing.T) {
 	var history []message.Message
 	var response []message.Message
-	wrapper, err := NewStatelessWrapper("", "741d17e7b77e4204a62e712bb5304615", models.GPT4, 4, 0)
+	wrapper, err := NewStatelessWrapper("", apikey, models.GPT4, 4, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func TestCallGPT(t *testing.T) {
 }
 
 func TestCallEmptyApiKey(t *testing.T) {
-	wrapper, err := NewStatelessWrapper("", "", models.GPT3Dot5Turbo, 4, 0)
+	wrapper, err := NewStatelessWrapper("", apikey, models.GPT3Dot5Turbo, 4, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
