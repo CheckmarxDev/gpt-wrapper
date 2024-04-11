@@ -51,11 +51,6 @@ type Wrapper interface {
 	Close() error
 }
 
-// shecma if http.. send http to proxy
-// else grpc existing client .. send req
-// opt layer reuse client..
-// if http is it cli to proxy or cli to gpt
-// base url + const path
 func NewWrapperFactory(endPoint, apiKey string, dropLen int) (Wrapper, error) {
 	endPointURL, err := url.Parse(endPoint)
 	if err != nil {
