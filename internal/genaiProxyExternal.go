@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/checkmarxDev/gpt-wrapper/internal/api/redirect_prompt"
+	"github.com/checkmarxDev/ai-proxy/pkg/api/redirect_prompt"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/models"
 	"google.golang.org/grpc"
@@ -13,10 +13,6 @@ import (
 	"net/http"
 )
 
-type GenAiProxy interface {
-	Wrapper
-	Close() error
-}
 type WrapperInternalImpl struct {
 	connection    *grpc.ClientConn
 	client        redirect_prompt.AiProxyServiceClient

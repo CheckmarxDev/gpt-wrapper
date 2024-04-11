@@ -3,11 +3,9 @@ package internal
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/models"
-	"github.com/checkmarxDev/gpt-wrapper/pkg/role"
 	"io"
 	"net/http"
 )
@@ -106,24 +104,6 @@ func (w *WrapperImpl) handleGptResponse(requestBody ChatCompletionRequest, resp 
 	return nil, fromResponse(resp.StatusCode, errorResponse)
 }
 
-func fromResponse(statusCode int, e *ErrorResponse) error {
-	var msg string
-	if e.Error.Message != "" {
-		msg = e.Error.Message
-	} else {
-		msg = fmt.Sprintf("%v", e.Error.Code)
-	}
-
-	msg = fmt.Sprintf("Error Code: %d, %s", statusCode, msg)
-
-	return errors.New(msg)
-}
-
-func findLastUserIndex(messages []message.Message) int {
-	for i := len(messages) - 1; i >= 0; i-- {
-		if messages[i].Role == role.User {
-			return i
-		}
-	}
-	return 0
+func (w *WrapperImpl) Close() error {
+	return nil
 }

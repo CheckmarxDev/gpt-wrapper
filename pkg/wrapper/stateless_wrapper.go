@@ -24,16 +24,20 @@ type StatelessWrapperImpl struct {
 	limit   int
 }
 
-func NewStatelessWrapper(endPoint, apiKey, model string, dropLen, limit int) StatelessWrapper {
+func NewStatelessWrapper(endPoint, apiKey, model string, dropLen, limit int) (StatelessWrapper, error) {
 	if model == "" {
 		model = models.DefaultModel
 	}
+	wrapper, err := internal.NewWrapperFactory(endPoint, apiKey, dropLen)
+	if err != nil {
+		return nil, err
+	}
 	return &StatelessWrapperImpl{
-		internal.NewWrapperFactory(endPoint, apiKey, dropLen),
+		wrapper,
 		model,
 		dropLen,
 		limit,
-	}
+	}, nil
 }
 
 func (w *StatelessWrapperImpl) SetupCall(setupMessages []message.Message) {

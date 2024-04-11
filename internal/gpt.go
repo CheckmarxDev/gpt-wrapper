@@ -1,7 +1,11 @@
 package internal
 
 import (
+	"errors"
+	"fmt"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
+	"github.com/checkmarxDev/gpt-wrapper/pkg/role"
+	"net/url"
 )
 
 const gptByAzure = "https://cxgpt4.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2023-05-15"
@@ -44,6 +48,7 @@ type ErrorResponse struct {
 type Wrapper interface {
 	Call(request ChatCompletionRequest) (*ChatCompletionResponse, error)
 	SetupCall(messages []message.Message)
+	Close() error
 }
 
 // shecma if http.. send http to proxy
@@ -51,6 +56,35 @@ type Wrapper interface {
 // opt layer reuse client..
 // if http is it cli to proxy or cli to gpt
 // base url + const path
-func NewWrapperFactory(endPoint, apiKey string, dropLen int) Wrapper {
-	return NewWrapperImpl(endPoint, apiKey, dropLen)
+func NewWrapperFactory(endPoint, apiKey string, dropLen int) (Wrapper, error) {
+	endPointURL, err := url.Parse(endPoint)
+	if err != nil {
+		return nil, err
+	}
+	if endPointURL.Scheme == "http" || endPointURL.Scheme == "https" {
+		return NewWrapperImpl(endPoint, apiKey, dropLen), nil
+	}
+	return NewWrapperInternalImpl(endPoint, dropLen)
+}
+
+func fromResponse(statusCode int, e *ErrorResponse) error {
+	var msg string
+	if e.Error.Message != "" {
+		msg = e.Error.Message
+	} else {
+		msg = fmt.Sprintf("%v", e.Error.Code)
+	}
+
+	msg = fmt.Sprintf("Error Code: %d, %s", statusCode, msg)
+
+	return errors.New(msg)
+}
+
+func findLastUserIndex(messages []message.Message) int {
+	for i := len(messages) - 1; i >= 0; i-- {
+		if messages[i].Role == role.User {
+			return i
+		}
+	}
+	return 0
 }
