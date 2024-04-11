@@ -12,7 +12,7 @@ import (
 
 func TestCallGPT_FS(t *testing.T) {
 	var history []message.Message
-	wrapper, err := NewStatefulWrapper(connector.NewFileSystemConnector(""), "", apikey, models.GPT3Dot5Turbo, 4, 0)
+	wrapper, err := NewStatefulWrapper(connector.NewFileSystemConnector(""), "https://api.openai.com/v1/chat/completions", apikey, models.GPT3Dot5Turbo, 4, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +53,7 @@ func TestCallGPT_FS(t *testing.T) {
 }
 
 func TestMaskSecrets(t *testing.T) {
-	wrapper, err := NewStatefulWrapper(connector.NewFileSystemConnector(""), "", apikey, models.GPT3Dot5Turbo, 4, 0)
+	wrapper, err := NewStatefulWrapper(connector.NewFileSystemConnector(""), "https://api.openai.com/v1/chat/completions", apikey, models.GPT3Dot5Turbo, 4, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
