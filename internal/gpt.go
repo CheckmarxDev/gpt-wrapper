@@ -8,8 +8,8 @@ import (
 	"net/url"
 )
 
-const gptByAzure = "https://cxgpt4.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2023-05-15"
-const gptByOpenAi = "https://api.openai.com/v1/chat/completions"
+// const gptByAzure = "https://cxgpt4.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2023-05-15"
+// const gptByOpenAi = "https://api.openai.com/v1/chat/completions"
 
 type ChatMetaData struct {
 	TenantID  string `json:"tenant_id"`

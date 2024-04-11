@@ -19,11 +19,15 @@ type StatefulWrapperImpl struct {
 	StatelessWrapper
 }
 
-func NewStatefulWrapper(storageConnector connector.Connector, endpoint, apiKey, model string, dropLen, limit int) StatefulWrapper {
+func NewStatefulWrapper(storageConnector connector.Connector, endpoint, apiKey, model string, dropLen, limit int) (StatefulWrapper, error) {
+	statelessWrapper, err := NewStatelessWrapper(endpoint, apiKey, model, dropLen, limit)
+	if err != nil {
+		return nil, err
+	}
 	return &StatefulWrapperImpl{
 		storageConnector,
-		NewStatelessWrapper(endpoint, apiKey, model, dropLen, limit),
-	}
+		statelessWrapper,
+	}, nil
 }
 
 func (w *StatefulWrapperImpl) SetupCall(setupMessages []message.Message) {
