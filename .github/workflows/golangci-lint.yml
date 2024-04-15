@@ -15,6 +15,8 @@ jobs:
   golangci:
     name: lint
     runs-on: ubuntu-latest
+    env:
+      GOPRIVATE: github.com/checkmarxDev/*
     steps:
       - uses: actions/setup-go@v4
         with:
