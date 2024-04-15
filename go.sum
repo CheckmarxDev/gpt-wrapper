@@ -10,8 +10,6 @@ github.com/AzureAD/microsoft-authentication-library-for-go v1.0.0 h1:OBhqkivkhkM
 github.com/AzureAD/microsoft-authentication-library-for-go v1.0.0/go.mod h1:kgDmCTgBzIEPFElEF+FK0SdjAor06dRq2Go927dnQ6o=
 github.com/checkmarxDev/ai-proxy v0.0.0-20240415110423-3d5dbc1cf938 h1:gmqYIupdTD4ENoPC4ifJxPq9R8nUVXHxKX6qsLj3J3s=
 github.com/checkmarxDev/ai-proxy v0.0.0-20240415110423-3d5dbc1cf938/go.mod h1:JNQZDw8BImkwFaxO5ocxJB4cRP1UFYims80LTMemNNw=
-github.com/checkmarxDev/gpt-wrapper v0.0.0-20230721160222-85da2fd1cc4c h1:oKI4C1dXYpi0B8pltDDzp1ZRiyeILv5enbp9h4ASQ3s=
-github.com/checkmarxDev/gpt-wrapper v0.0.0-20230721160222-85da2fd1cc4c/go.mod h1:l+0rISRGaps2HWkpvKbYPE1nsNx28vBj6bKorEm1M5o=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
