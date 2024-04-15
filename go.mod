@@ -1,19 +1,19 @@
-module github.com/checkmarxDev/gpt-wrapper
+module gpt-wrapper
 
 go 1.21.5
 
 require (
-	github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai v0.4.1
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.9.1
-	github.com/checkmarxDev/ai-proxy v0.0.0-20240411075043-aac831ff4895
+	github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai v0.5.1
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.11.1
+	github.com/checkmarxDev/ai-proxy v0.0.0-20240415110423-3d5dbc1cf938
+	github.com/checkmarxDev/gpt-wrapper v0.0.0-20230721160222-85da2fd1cc4c
 	github.com/google/uuid v1.6.0
 	github.com/spf13/viper v1.18.2
 	google.golang.org/grpc v1.63.2
 )
 
 require (
-	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.5.1 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.1 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.2 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
