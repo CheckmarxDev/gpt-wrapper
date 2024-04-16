@@ -19,10 +19,8 @@ type Config struct {
 
 func TestCallGPT_FS(t *testing.T) {
 	var history []message.Message
-	wrapper, err := NewStatefulWrapper(connector.NewFileSystemConnector(""), "https://api.openai.com/v1/chat/completions", apikey, models.GPT3Dot5Turbo, 4, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
+	wrapper := NewStatefulWrapper(connector.NewFileSystemConnector(""), apikey, models.GPT3Dot5Turbo, 4, 0)
+
 	id := wrapper.GenerateId()
 	t.Log(id)
 	for _, q := range userQuestions {
@@ -71,7 +69,7 @@ func TestCallGPT_ToProxy(t *testing.T) {
 		t.Fatal(err)
 	}
 	var history []message.Message
-	wrapper, err := NewStatefulWrapper(connector.NewFileSystemConnector(""), cfg.EndPointGRPC, apikey, models.GPT4, 4, 0)
+	wrapper, err := NewStatefulWrapperNew(connector.NewFileSystemConnector(""), cfg.EndPointGRPC, apikey, models.GPT4, 4, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,10 +110,7 @@ func TestCallGPT_ToProxy(t *testing.T) {
 }
 
 func TestMaskSecrets(t *testing.T) {
-	wrapper, err := NewStatefulWrapper(connector.NewFileSystemConnector(""), "https://api.openai.com/v1/chat/completions", apikey, models.GPT3Dot5Turbo, 4, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
+	wrapper := NewStatefulWrapper(connector.NewFileSystemConnector(""), apikey, models.GPT3Dot5Turbo, 4, 0)
 	id := wrapper.GenerateId()
 	t.Log(id)
 	entries, err := wrapper.MaskSecrets("password=exposed")

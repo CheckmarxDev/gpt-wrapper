@@ -12,7 +12,7 @@ import (
 func TestCallGPT(t *testing.T) {
 	var history []message.Message
 	var response []message.Message
-	wrapper, err := NewStatelessWrapper("https://api.openai.com/v1/chat/completions", apikey, models.GPT4, 4, 0)
+	wrapper, err := NewStatelessWrapper(OpenAiEndPoint, apikey, models.GPT3Dot5Turbo, 4, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func TestCallGPT(t *testing.T) {
 }
 
 func TestCallEmptyApiKey(t *testing.T) {
-	wrapper, err := NewStatelessWrapper("https://api.openai.com/v1/chat/completions", apikey, models.GPT3Dot5Turbo, 4, 0)
+	wrapper, err := NewStatelessWrapper(OpenAiEndPoint, apikey, models.GPT3Dot5Turbo, 4, 0)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -11,6 +11,8 @@ import (
 	"github.com/checkmarxDev/gpt-wrapper/pkg/role"
 )
 
+const OpenAiEndPoint = "https://api.openai.com/v1/chat/completions"
+
 type StatelessWrapper interface {
 	Call([]message.Message, []message.Message) ([]message.Message, error)
 	SetupCall([]message.Message)

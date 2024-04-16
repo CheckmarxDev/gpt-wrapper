@@ -12,7 +12,7 @@ import (
 )
 
 const azureOpenaiHost = "https://cxgpt4.openai.azure.com/"
-const azureOpenAIAPIKey = "741d17e7b77e4204a62e712bb5304615"
+const azureOpenAIAPIKey = ""
 
 func Test(t *testing.T) {
 	keyCredential := azcore.NewKeyCredential(azureOpenAIAPIKey)
