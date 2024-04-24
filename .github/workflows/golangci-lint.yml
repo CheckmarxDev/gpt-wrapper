@@ -11,14 +11,14 @@ permissions:
   checks: write
   # Optional: allow read access to pull request. Use with `only-new-issues` option.
   # pull-requests: read
+env:
+  GOPRIVATE: github.com/checkmarxDev/*,github.com/checkmarxDev/*
+  GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
 jobs:
   golangci:
     name: lint
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    env:
-      GOPRIVATE: github.com/checkmarxDev/*,github.com/checkmarxDev/*
-      GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
