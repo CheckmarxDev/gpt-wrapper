@@ -35,7 +35,7 @@ jobs:
           #args: --timeout 3m --config .golangci.yml
 
           # Optional: working directory, useful for monorepos
-          # working-directory: somedir
+          working-directory: pkg/wrapper
 
           # Optional: golangci-lint command line arguments.
           # args: --issues-exit-code=0
