@@ -11,6 +11,8 @@ import (
 	"github.com/checkmarxDev/gpt-wrapper/pkg/role"
 )
 
+const OpenAiEndPoint = "https://api.openai.com/v1/chat/completions"
+
 type StatelessWrapper interface {
 	Call([]message.Message, []message.Message) ([]message.Message, error)
 	SetupCall([]message.Message)
@@ -18,24 +20,26 @@ type StatelessWrapper interface {
 }
 
 type StatelessWrapperImpl struct {
-	wrapper internal.WrapperImpl
-	apiKey  string
+	wrapper internal.Wrapper
 	model   string
 	dropLen int
 	limit   int
 }
 
-func NewStatelessWrapper(apiKey, model string, dropLen, limit int) StatelessWrapper {
+func NewStatelessWrapper(endPoint, apiKey, model string, dropLen, limit int) (StatelessWrapper, error) {
 	if model == "" {
 		model = models.DefaultModel
 	}
+	wrapper, err := internal.NewWrapperFactory(endPoint, apiKey, dropLen)
+	if err != nil {
+		return nil, err
+	}
 	return &StatelessWrapperImpl{
-		internal.NewWrapperImpl(apiKey, dropLen),
-		apiKey,
+		wrapper,
 		model,
 		dropLen,
 		limit,
-	}
+	}, nil
 }
 
 func (w *StatelessWrapperImpl) SetupCall(setupMessages []message.Message) {

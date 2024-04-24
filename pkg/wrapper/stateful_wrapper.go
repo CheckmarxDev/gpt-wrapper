@@ -19,11 +19,24 @@ type StatefulWrapperImpl struct {
 	StatelessWrapper
 }
 
-func NewStatefulWrapper(storageConnector connector.Connector, apiKey, model string, dropLen, limit int) StatefulWrapper {
+func NewStatefulWrapperNew(storageConnector connector.Connector, endpoint, apiKey, model string, dropLen, limit int) (StatefulWrapper, error) {
+	statelessWrapper, err := NewStatelessWrapper(endpoint, apiKey, model, dropLen, limit)
+	if err != nil {
+		return nil, err
+	}
 	return &StatefulWrapperImpl{
 		storageConnector,
-		NewStatelessWrapper(apiKey, model, dropLen, limit),
+		statelessWrapper,
+	}, nil
+}
+
+// NewStatefulWrapper will be deprecated in the future
+func NewStatefulWrapper(storageConnector connector.Connector, apiKey, model string, dropLen, limit int) StatefulWrapper {
+	statelessWrapper, err := NewStatefulWrapperNew(storageConnector, OpenAiEndPoint, apiKey, model, dropLen, limit)
+	if err != nil {
+		return nil
 	}
+	return statelessWrapper
 }
 
 func (w *StatefulWrapperImpl) SetupCall(setupMessages []message.Message) {

@@ -12,10 +12,12 @@ import (
 func TestCallGPT(t *testing.T) {
 	var history []message.Message
 	var response []message.Message
-	wrapper := NewStatelessWrapper(apikey, models.GPT3Dot5Turbo, 4, 0)
+	wrapper, err := NewStatelessWrapper(OpenAiEndPoint, apikey, models.GPT3Dot5Turbo, 4, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, q := range userQuestions {
 		t.Log(q)
-		var err error
 		var newMessages []message.Message
 		newMessages = append(newMessages, message.Message{
 			Role:    role.System,
@@ -47,9 +49,12 @@ func TestCallGPT(t *testing.T) {
 }
 
 func TestCallEmptyApiKey(t *testing.T) {
-	wrapper := NewStatelessWrapper("", models.GPT3Dot5Turbo, 4, 0)
+	wrapper, err := NewStatelessWrapper(OpenAiEndPoint, apikey, models.GPT3Dot5Turbo, 4, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
 	q := userQuestions[0]
-	_, err := wrapper.Call(nil, []message.Message{{
+	_, err = wrapper.Call(nil, []message.Message{{
 		Role:    role.User,
 		Content: fmt.Sprintf(userInput, q),
 	}})

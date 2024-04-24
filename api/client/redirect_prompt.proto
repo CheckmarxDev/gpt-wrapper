@@ -1,0 +1,28 @@
+//protoc redirect_prompt.proto -Iapi/client -Ithird_party --go_out=plugins=grpc:./internal/
+syntax = "proto3";
+
+package redirect_prompt;
+option go_package = "api/redirect_prompt";
+
+import "google/protobuf/struct.proto";
+
+service AiProxyService {
+    rpc RedirectPrompt (RedirectPromptRequest) returns (RedirectPromptResponse) {}
+}
+
+message RedirectPromptRequest {
+    string tenant = 1;
+    string request_id = 2;
+    string origin = 3;
+    bytes content = 10;
+}
+
+message RedirectPromptResponse {
+    string tenant = 1;
+    string request_id = 2;
+    string origin = 3;
+    int32 gen_ai_error_code = 8;
+    bytes content = 10;
+
+}
+

@@ -1,0 +1,59 @@
+version: 2.1
+executors:
+  circle-machine:
+    machine:
+      image: default
+      docker_layer_caching: true
+      resource_class: large
+  go-container:
+    docker:
+      - image: golang:1.22.1
+    resource_class: large
+  go-lint:
+    docker:
+      - image: golangci/golangci-lint:v1.56.2-alpine
+    resource_class: xlarge
+
+orbs:
+  checkmarx: checkmarx/circleci-kpi-shipper@0.11.0
+  ast-circleci-libs: checkmarx/ast-circleci-libs@2
+
+jobs:
+  lint:
+    executor:
+      go-lint
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Config GOPRIVATE environment variable
+          command: echo "export GOPRIVATE=github.com/CheckmarxDev/*,github.com/checkmarxDev/*" >> $BASH_ENV
+      - run:
+          name: Config Git credentials
+          command: git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+      - restore_cache:
+          keys:
+            - go-mod-v1-{{ checksum "go.sum" }}
+      - run:
+          name: Get latest go version (1.22.1)
+          command: cd /tmp && wget https://go.dev/dl/go1.22.1.linux-amd64.tar.gz && tar -xvf go1.22.1.linux-amd64.tar.gz && cp -rfv go/bin /usr/local/go && go version
+      - run:
+          name: Run golangci-lint
+          command: golangci-lint -v run ./... --timeout 10m
+          no_output_timeout: 10m
+
+      - save_cache: # Store cache in the /go/pkg directory
+          key: go-mod-v1-{{ checksum "go.sum" }}
+          paths:
+            - "/go/pkg/mod"
+
+workflows:
+  Test-workflow:
+    jobs:
+      - lint:
+          filters:
+            branches:
+              ignore:
+                - master
+                - /^release\/v\d+\.\d+$/
+          context: AWS

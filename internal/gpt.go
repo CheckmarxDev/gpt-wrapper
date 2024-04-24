@@ -1,16 +1,21 @@
 package internal
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
-	"github.com/checkmarxDev/gpt-wrapper/pkg/models"
 	"github.com/checkmarxDev/gpt-wrapper/pkg/role"
-	"io"
-	"net/http"
+	"net/url"
 )
+
+// const gptByAzure = "https://cxgpt4.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2023-05-15"
+// const gptByOpenAi = "https://api.openai.com/v1/chat/completions"
+
+type ChatMetaData struct {
+	TenantID  string `json:"tenant_id"`
+	RequestID string `json:"request_id"`
+	Origin    string `json:"origin"`
+}
 
 type ChatCompletionRequest struct {
 	Model    string            `json:"model"`
@@ -42,100 +47,19 @@ type ErrorResponse struct {
 
 type Wrapper interface {
 	Call(request ChatCompletionRequest) (*ChatCompletionResponse, error)
+	SetupCall(messages []message.Message)
+	Close() error
 }
 
-type WrapperImpl struct {
-	apiKey        string
-	dropLen       int
-	setupMessages []message.Message
-}
-
-func NewWrapperImpl(apiKey string, dropLen int) WrapperImpl {
-	return WrapperImpl{
-		apiKey:  apiKey,
-		dropLen: dropLen,
-	}
-}
-
-func (w *WrapperImpl) SetupCall(messages []message.Message) {
-	w.setupMessages = messages
-}
-
-func (w *WrapperImpl) Call(requestBody ChatCompletionRequest) (*ChatCompletionResponse, error) {
-	if w.setupMessages != nil {
-		if requestBody.Model == models.GPT4 {
-			requestBody.Messages = append(w.setupMessages, requestBody.Messages...)
-		} else {
-			userIndex := findLastUserIndex(requestBody.Messages)
-			front := requestBody.Messages[:userIndex]
-			back := requestBody.Messages[userIndex:]
-			requestBody.Messages = append(front, w.setupMessages...)
-			requestBody.Messages = append(requestBody.Messages, back...)
-		}
-	}
-
-	req, err := w.prepareRequest(requestBody)
+func NewWrapperFactory(endPoint, apiKey string, dropLen int) (Wrapper, error) {
+	endPointURL, err := url.Parse(endPoint)
 	if err != nil {
 		return nil, err
 	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
+	if endPointURL.Scheme == "http" || endPointURL.Scheme == "https" {
+		return NewWrapperImpl(endPoint, apiKey, dropLen), nil
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	return w.handleGptResponse(requestBody, resp)
-}
-
-func (w *WrapperImpl) prepareRequest(requestBody ChatCompletionRequest) (*http.Request, error) {
-	jsonData, err := json.Marshal(requestBody)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, "https://api.openai.com/v1/chat/completions", bytes.NewBuffer(jsonData))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", w.apiKey))
-
-	return req, nil
-}
-
-func (w *WrapperImpl) handleGptResponse(requestBody ChatCompletionRequest, resp *http.Response) (*ChatCompletionResponse, error) {
-	var err error
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode == http.StatusOK {
-		var responseBody = new(ChatCompletionResponse)
-		err = json.Unmarshal(bodyBytes, responseBody)
-		if err != nil {
-			return nil, err
-		}
-		return responseBody, nil
-	}
-	var errorResponse = new(ErrorResponse)
-	err = json.Unmarshal(bodyBytes, errorResponse)
-	if err != nil {
-		return nil, err
-	}
-	switch resp.StatusCode {
-	case http.StatusBadRequest:
-		if errorResponse.Error.Code == errorCodeMaxTokens {
-			return w.Call(ChatCompletionRequest{
-				Model:    requestBody.Model,
-				Messages: requestBody.Messages[w.dropLen:],
-			})
-		}
-	}
-	return nil, fromResponse(resp.StatusCode, errorResponse)
+	return NewWrapperInternalImpl(endPoint, dropLen)
 }
 
 func fromResponse(statusCode int, e *ErrorResponse) error {
