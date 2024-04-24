@@ -13,7 +13,7 @@ permissions:
   # pull-requests: read
 env:
   GOPRIVATE: github.com/checkmarxDev/*,github.com/checkmarxDev/*
-  GH_ACCESS_TOKEN: ${{ secrets.GH_RW_CXDEV_TOKEN }}
+  GH_RW_CXDEV_TOKEN: ${{ secrets.GH_RW_CXDEV_TOKEN }}
 jobs:
   golangci:
     name: lint
