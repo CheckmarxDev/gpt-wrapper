@@ -17,9 +17,6 @@ This repository has been developed and is maintained by the Checkmarx AI Squad, 
 ## Support
 For any issues or support needs, please contact the Checkmarx AI squad through our internal communication channels or open an issue on this repository’s issue tracker network.
 
-## License
-This project is licensed under the terms of the Apache-2.0 license. Please see (https://www.apache.org/licenses/LICENSE-2.0) for more information.
-
 ---
 
 **Note: This software is intended for use by Checkmarx and its affiliates. Please adhere to all proprietary guidelines and usage policies.**
