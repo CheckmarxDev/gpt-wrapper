@@ -3,12 +3,12 @@ package wrapper
 import (
 	"errors"
 
-	"github.com/checkmarxDev/gpt-wrapper/internal"
-	"github.com/checkmarxDev/gpt-wrapper/internal/secrets"
-	"github.com/checkmarxDev/gpt-wrapper/pkg/maskedSecret"
-	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
-	"github.com/checkmarxDev/gpt-wrapper/pkg/models"
-	"github.com/checkmarxDev/gpt-wrapper/pkg/role"
+	"github.com/Checkmarx/gen-ai-wrapper/internal"
+	"github.com/Checkmarx/gen-ai-wrapper/internal/secrets"
+	"github.com/Checkmarx/gen-ai-wrapper/pkg/maskedSecret"
+	"github.com/Checkmarx/gen-ai-wrapper/pkg/message"
+	"github.com/Checkmarx/gen-ai-wrapper/pkg/models"
+	"github.com/Checkmarx/gen-ai-wrapper/pkg/role"
 )
 
 const OpenAiEndPoint = "https://api.openai.com/v1/chat/completions"

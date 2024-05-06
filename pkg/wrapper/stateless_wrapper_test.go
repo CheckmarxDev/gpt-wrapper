@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
-	"github.com/checkmarxDev/gpt-wrapper/pkg/models"
-	"github.com/checkmarxDev/gpt-wrapper/pkg/role"
+	"github.com/Checkmarx/gen-ai-wrapper/pkg/message"
+	"github.com/Checkmarx/gen-ai-wrapper/pkg/models"
+	"github.com/Checkmarx/gen-ai-wrapper/pkg/role"
 )
 
 func TestCallGPT(t *testing.T) {

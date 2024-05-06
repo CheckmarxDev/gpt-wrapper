@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/checkmarxDev/gpt-wrapper/pkg/maskedSecret"
+	"github.com/Checkmarx/gen-ai-wrapper/pkg/maskedSecret"
 )
 
 const (
