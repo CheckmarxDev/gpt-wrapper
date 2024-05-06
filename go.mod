@@ -1,11 +1,10 @@
-module github.com/checkmarxDev/gpt-wrapper
+module github.com/Checkmarx/gen-ai-wrapper
 
 go 1.21.5
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai v0.5.1
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.11.1
-	github.com/checkmarxDev/ai-proxy v0.0.0-20240415110423-3d5dbc1cf938
 	github.com/google/uuid v1.6.0
 	github.com/spf13/viper v1.18.2
 	google.golang.org/grpc v1.63.2

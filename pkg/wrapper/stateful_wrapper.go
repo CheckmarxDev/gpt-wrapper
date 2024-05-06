@@ -1,9 +1,9 @@
 package wrapper
 
 import (
-	"github.com/checkmarxDev/gpt-wrapper/pkg/connector"
-	"github.com/checkmarxDev/gpt-wrapper/pkg/maskedSecret"
-	"github.com/checkmarxDev/gpt-wrapper/pkg/message"
+	"github.com/Checkmarx/gen-ai-wrapper/pkg/connector"
+	"github.com/Checkmarx/gen-ai-wrapper/pkg/maskedSecret"
+	"github.com/Checkmarx/gen-ai-wrapper/pkg/message"
 	"github.com/google/uuid"
 )
 
