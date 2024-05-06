@@ -4,7 +4,7 @@ Private - GoLang Abstraction for OpenAI LLM
 Customized Solutions for Checkmarx Special improvements and optimizations for Checkmarx use cases, improving reliability and performance in internal products.
 
 ## Overview
-GPT-Wrapper is a robust GoLang repository designed as an abstraction layer for easy communication with OpenAI's language models (LLM). It is principally aimed at providing a simplified SDK to facilitate direct interactions with OpenAI LLM models, supporting calls with or without history tracking. Enhanced error handling mechanisms are integrated to improve reliability and user experience.
+GenAi-Wrapper is a robust GoLang repository designed as an abstraction layer for easy communication with OpenAI's language models (LLM). It is principally aimed at providing a simplified SDK to facilitate direct interactions with OpenAI LLM models, supporting calls with or without history tracking. Enhanced error handling mechanisms are integrated to improve reliability and user experience.
 
 This repository has been developed and is maintained by the Checkmarx AI Squad, incorporating custom features aligned with Checkmarx's requirements and standards.
 
