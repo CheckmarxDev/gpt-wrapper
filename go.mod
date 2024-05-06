@@ -1,4 +1,4 @@
-module github.com/checkmarxDev/gpt-wrapper
+module github.com/checkmarx/gen-ai-wrapper
 
 go 1.21.5
 
