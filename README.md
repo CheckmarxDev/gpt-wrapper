@@ -1,5 +1,6 @@
 
-# GPT-Wrapper - GoLang Abstraction for OpenAI LLM
+# GenAi-Wrapper
+Private - GoLang Abstraction for OpenAI LLM
 Customized Solutions for Checkmarx Special improvements and optimizations for Checkmarx use cases, improving reliability and performance in internal products.
 
 ## Overview
