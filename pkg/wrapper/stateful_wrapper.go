@@ -1,6 +1,7 @@
 package wrapper
 
 import (
+	"errors"
 	"github.com/Checkmarx/gen-ai-wrapper/pkg/connector"
 	"github.com/Checkmarx/gen-ai-wrapper/pkg/maskedSecret"
 	"github.com/Checkmarx/gen-ai-wrapper/pkg/message"
@@ -9,6 +10,7 @@ import (
 
 type StatefulWrapper interface {
 	GenerateId() uuid.UUID
+	SecureCall(*message.MetaData, uuid.UUID, []message.Message) ([]message.Message, error)
 	Call(uuid.UUID, []message.Message) ([]message.Message, error)
 	SetupCall([]message.Message)
 	MaskSecrets(fileContent string) (*maskedSecret.MaskedEntry, error)
@@ -47,7 +49,7 @@ func (w *StatefulWrapperImpl) GenerateId() uuid.UUID {
 	return uuid.New()
 }
 
-func (w *StatefulWrapperImpl) Call(id uuid.UUID, newMessages []message.Message) ([]message.Message, error) {
+func (w *StatefulWrapperImpl) SecureCall(metaData *message.MetaData, id uuid.UUID, newMessages []message.Message) ([]message.Message, error) {
 	var err error
 	var history []message.Message
 	var response []message.Message
@@ -57,12 +59,12 @@ func (w *StatefulWrapperImpl) Call(id uuid.UUID, newMessages []message.Message) 
 		return nil, err
 	}
 
-	response, err = w.StatelessWrapper.Call(history, newMessages)
+	response, err = w.StatelessWrapper.SecureCall(metaData, history, newMessages)
 	if err != nil {
 		return nil, err
 	}
 	if len(response) != 1 {
-		panic(response)
+		return nil, errors.New("unexpected response length")
 	}
 
 	history = append(history, newMessages...)
@@ -74,6 +76,10 @@ func (w *StatefulWrapperImpl) Call(id uuid.UUID, newMessages []message.Message) 
 	}
 
 	return response, nil
+}
+
+func (w *StatefulWrapperImpl) Call(id uuid.UUID, newMessages []message.Message) ([]message.Message, error) {
+	return w.SecureCall(nil, id, newMessages)
 }
 
 func (w *StatefulWrapperImpl) MaskSecrets(fileContent string) (*maskedSecret.MaskedEntry, error) {

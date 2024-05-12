@@ -14,6 +14,7 @@ import (
 const OpenAiEndPoint = "https://api.openai.com/v1/chat/completions"
 
 type StatelessWrapper interface {
+	SecureCall(*message.MetaData, []message.Message, []message.Message) ([]message.Message, error)
 	Call([]message.Message, []message.Message) ([]message.Message, error)
 	SetupCall([]message.Message)
 	MaskSecrets(fileContent string) (*maskedSecret.MaskedEntry, error)
@@ -46,7 +47,7 @@ func (w *StatelessWrapperImpl) SetupCall(setupMessages []message.Message) {
 	w.wrapper.SetupCall(setupMessages)
 }
 
-func (w *StatelessWrapperImpl) Call(history []message.Message, newMessages []message.Message) ([]message.Message, error) {
+func (w *StatelessWrapperImpl) SecureCall(metaData *message.MetaData, history []message.Message, newMessages []message.Message) ([]message.Message, error) {
 	var conversation []message.Message
 	userMessageCount := 0
 	for _, m := range append(history, newMessages...) {
@@ -64,12 +65,12 @@ func (w *StatelessWrapperImpl) Call(history []message.Message, newMessages []mes
 		return nil, errors.New("user message limit exceeded")
 	}
 
-	requestBody := internal.ChatCompletionRequest{
+	requestBody := &internal.ChatCompletionRequest{
 		Model:    w.model,
 		Messages: conversation,
 	}
 
-	response, err := w.wrapper.Call(requestBody)
+	response, err := w.wrapper.Call(metaData, requestBody)
 	if err != nil {
 		return nil, err
 	}
@@ -78,15 +79,18 @@ func (w *StatelessWrapperImpl) Call(history []message.Message, newMessages []mes
 
 	for _, c := range response.Choices {
 		if c.FinishReason == internal.FinishReasonLength {
-			return w.Call(history[w.dropLen:], newMessages)
+			return w.SecureCall(metaData, history[w.dropLen:], newMessages)
 		}
 		responseMessages = append(responseMessages, message.Message{
 			Role:    c.Message.Role,
 			Content: c.Message.Content,
 		})
 	}
-
 	return responseMessages, nil
+}
+
+func (w *StatelessWrapperImpl) Call(history []message.Message, newMessages []message.Message) ([]message.Message, error) {
+	return w.SecureCall(nil, history, newMessages)
 }
 
 func (w *StatelessWrapperImpl) MaskSecrets(fileContent string) (*maskedSecret.MaskedEntry, error) {

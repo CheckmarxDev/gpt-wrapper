@@ -11,12 +11,6 @@ import (
 // const gptByAzure = "https://cxgpt4.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2023-05-15"
 // const gptByOpenAi = "https://api.openai.com/v1/chat/completions"
 
-type ChatMetaData struct {
-	TenantID  string `json:"tenant_id"`
-	RequestID string `json:"request_id"`
-	Origin    string `json:"origin"`
-}
-
 type ChatCompletionRequest struct {
 	Model    string            `json:"model"`
 	Messages []message.Message `json:"messages"`
@@ -46,7 +40,7 @@ type ErrorResponse struct {
 }
 
 type Wrapper interface {
-	Call(request ChatCompletionRequest) (*ChatCompletionResponse, error)
+	Call(metaData *message.MetaData, request *ChatCompletionRequest) (*ChatCompletionResponse, error)
 	SetupCall(messages []message.Message)
 	Close() error
 }
