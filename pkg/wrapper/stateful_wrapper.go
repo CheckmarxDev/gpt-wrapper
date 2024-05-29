@@ -10,7 +10,7 @@ import (
 
 type StatefulWrapper interface {
 	GenerateId() uuid.UUID
-	SecureCall(*message.MetaData, uuid.UUID, []message.Message) ([]message.Message, error)
+	SecureCall(string, *message.MetaData, uuid.UUID, []message.Message) ([]message.Message, error)
 	Call(uuid.UUID, []message.Message) ([]message.Message, error)
 	SetupCall([]message.Message)
 	MaskSecrets(fileContent string) (*maskedSecret.MaskedEntry, error)
@@ -49,7 +49,7 @@ func (w *StatefulWrapperImpl) GenerateId() uuid.UUID {
 	return uuid.New()
 }
 
-func (w *StatefulWrapperImpl) SecureCall(metaData *message.MetaData, id uuid.UUID, newMessages []message.Message) ([]message.Message, error) {
+func (w *StatefulWrapperImpl) SecureCall(cxAuth string, metaData *message.MetaData, id uuid.UUID, newMessages []message.Message) ([]message.Message, error) {
 	var err error
 	var history []message.Message
 	var response []message.Message
@@ -59,7 +59,7 @@ func (w *StatefulWrapperImpl) SecureCall(metaData *message.MetaData, id uuid.UUI
 		return nil, err
 	}
 
-	response, err = w.StatelessWrapper.SecureCall(metaData, history, newMessages)
+	response, err = w.StatelessWrapper.SecureCall(cxAuth, metaData, history, newMessages)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (w *StatefulWrapperImpl) SecureCall(metaData *message.MetaData, id uuid.UUI
 }
 
 func (w *StatefulWrapperImpl) Call(id uuid.UUID, newMessages []message.Message) ([]message.Message, error) {
-	return w.SecureCall(nil, id, newMessages)
+	return w.SecureCall("", nil, id, newMessages)
 }
 
 func (w *StatefulWrapperImpl) MaskSecrets(fileContent string) (*maskedSecret.MaskedEntry, error) {

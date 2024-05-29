@@ -29,7 +29,7 @@ func (w *WrapperImpl) SetupCall(messages []message.Message) {
 	w.setupMessages = messages
 }
 
-func (w *WrapperImpl) Call(metaData *message.MetaData, request *ChatCompletionRequest) (*ChatCompletionResponse, error) {
+func (w *WrapperImpl) Call(cxAuth string, metaData *message.MetaData, request *ChatCompletionRequest) (*ChatCompletionResponse, error) {
 	if w.setupMessages != nil {
 		//true for GPT4
 		if request.Model == models.GPT4 {
@@ -43,7 +43,7 @@ func (w *WrapperImpl) Call(metaData *message.MetaData, request *ChatCompletionRe
 		}
 	}
 
-	req, err := w.prepareRequest(metaData, request)
+	req, err := w.prepareRequest(cxAuth, metaData, request)
 	if err != nil {
 		return nil, err
 	}
@@ -56,10 +56,10 @@ func (w *WrapperImpl) Call(metaData *message.MetaData, request *ChatCompletionRe
 		_ = resp.Body.Close()
 	}()
 
-	return w.handleGptResponse(metaData, request, resp)
+	return w.handleGptResponse(cxAuth, metaData, request, resp)
 }
 
-func (w *WrapperImpl) prepareRequest(metaData *message.MetaData, requestBody *ChatCompletionRequest) (*http.Request, error) {
+func (w *WrapperImpl) prepareRequest(cxAuth string, metaData *message.MetaData, requestBody *ChatCompletionRequest) (*http.Request, error) {
 	jsonData, err := json.Marshal(requestBody)
 	if err != nil {
 		return nil, err
@@ -68,18 +68,27 @@ func (w *WrapperImpl) prepareRequest(metaData *message.MetaData, requestBody *Ch
 	if err != nil {
 		return nil, err
 	}
+
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", w.apiKey))
 	if metaData != nil {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", cxAuth))
 		req.Header.Set("X-Request-ID", metaData.RequestID)
 		req.Header.Set("X-Tenant-ID", metaData.TenantID)
-		req.Header.Set("X-Origin", metaData.Origin)
-		req.Header.Set("X-Feature-Name", metaData.Origin)
+		req.Header.Set("User-Agent", metaData.UserAgent)
+		req.Header.Set("X-Feature-Name", metaData.Feature)
+		if metaData.ExternalAzure != nil {
+			req.Header.Set("X-External-Azure-Endpoint", metaData.ExternalAzure.Endpoint)
+			req.Header.Set("X-External-Azure-ApiKey", metaData.ExternalAzure.ApiKey)
+		}
+	} else
+	// headers suited for openAi endpoint
+	{
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", w.apiKey))
 	}
 	return req, nil
 }
 
-func (w *WrapperImpl) handleGptResponse(metaData *message.MetaData, requestBody *ChatCompletionRequest, resp *http.Response) (*ChatCompletionResponse, error) {
+func (w *WrapperImpl) handleGptResponse(accessToken string, metaData *message.MetaData, requestBody *ChatCompletionRequest, resp *http.Response) (*ChatCompletionResponse, error) {
 	var err error
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -101,7 +110,7 @@ func (w *WrapperImpl) handleGptResponse(metaData *message.MetaData, requestBody 
 	switch resp.StatusCode {
 	case http.StatusBadRequest:
 		if errorResponse.Error.Code == errorCodeMaxTokens {
-			return w.Call(metaData, &ChatCompletionRequest{
+			return w.Call(accessToken, metaData, &ChatCompletionRequest{
 				Model:    requestBody.Model,
 				Messages: requestBody.Messages[w.dropLen:],
 			})

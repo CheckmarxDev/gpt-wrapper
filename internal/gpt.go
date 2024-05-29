@@ -40,7 +40,8 @@ type ErrorResponse struct {
 }
 
 type Wrapper interface {
-	Call(metaData *message.MetaData, request *ChatCompletionRequest) (*ChatCompletionResponse, error)
+	//Call todo in a clean way, to handle both internal and external wrappers required splitting Call into two functions build the request and send the request
+	Call(auth string, metaData *message.MetaData, request *ChatCompletionRequest) (*ChatCompletionResponse, error)
 	SetupCall(messages []message.Message)
 	Close() error
 }

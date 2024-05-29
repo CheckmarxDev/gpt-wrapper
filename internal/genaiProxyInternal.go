@@ -38,7 +38,7 @@ func (w *WrapperInternalImpl) SetupCall(messages []message.Message) {
 	w.setupMessages = messages
 }
 
-func (w *WrapperInternalImpl) Call(metaData *message.MetaData, request *ChatCompletionRequest) (*ChatCompletionResponse, error) {
+func (w *WrapperInternalImpl) Call(_ string, metaData *message.MetaData, request *ChatCompletionRequest) (*ChatCompletionResponse, error) {
 	if w.setupMessages != nil {
 		//true for GPT4
 		if request.Model == models.GPT4 {
@@ -61,7 +61,7 @@ func (w *WrapperInternalImpl) Call(metaData *message.MetaData, request *ChatComp
 	if err != nil {
 		return nil, err
 	}
-	return w.handleGptResponse(metaData, request, resp)
+	return w.handleGptResponse("", metaData, request, resp)
 }
 
 func (w *WrapperInternalImpl) prepareRequest(metaData *message.MetaData, requestBody *ChatCompletionRequest) (*redirect_prompt.RedirectPromptRequest, error) {
@@ -75,13 +75,13 @@ func (w *WrapperInternalImpl) prepareRequest(metaData *message.MetaData, request
 	if metaData != nil {
 		req.Tenant = metaData.TenantID
 		req.RequestId = metaData.RequestID
-		req.Origin = metaData.Origin
-
+		req.Origin = metaData.UserAgent
+		req.Feature = metaData.Feature
 	}
 	return req, nil
 }
 
-func (w *WrapperInternalImpl) handleGptResponse(metaData *message.MetaData, requestBody *ChatCompletionRequest, resp *redirect_prompt.RedirectPromptResponse) (*ChatCompletionResponse, error) {
+func (w *WrapperInternalImpl) handleGptResponse(_ string, metaData *message.MetaData, requestBody *ChatCompletionRequest, resp *redirect_prompt.RedirectPromptResponse) (*ChatCompletionResponse, error) {
 	var err error
 	bodyBytes, err := io.ReadAll(bytes.NewBuffer(resp.Content))
 	if err != nil {
@@ -103,7 +103,7 @@ func (w *WrapperInternalImpl) handleGptResponse(metaData *message.MetaData, requ
 	switch resp.GenAiErrorCode {
 	case http.StatusBadRequest:
 		if errorResponse.Error.Code == errorCodeMaxTokens {
-			return w.Call(metaData, &ChatCompletionRequest{
+			return w.Call("", metaData, &ChatCompletionRequest{
 				Model:    requestBody.Model,
 				Messages: requestBody.Messages[w.dropLen:],
 			})

@@ -14,6 +14,7 @@ message RedirectPromptRequest {
     string tenant = 1;
     string request_id = 2;
     string origin = 3;
+    string feature = 4;
     bytes content = 10;
 }
 

@@ -6,9 +6,14 @@ type Message struct {
 }
 
 type MetaData struct {
-	TenantID    string `json:"tenant_id,omitempty"`
-	RequestID   string `json:"request_id"`
-	Origin      string `json:"origin"`
-	FeatureName string `json:"feature_name"`
-	AccessToken string `json:"access_token,omitempty"`
+	TenantID      string
+	RequestID     string
+	UserAgent     string
+	Feature       string
+	ExternalAzure *ExternalAzure
+}
+
+type ExternalAzure struct {
+	Endpoint string
+	ApiKey   string
 }
