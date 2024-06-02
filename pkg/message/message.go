@@ -10,7 +10,7 @@ type MetaData struct {
 	RequestID     string
 	UserAgent     string
 	Feature       string
-	ExternalAzure *ExternalAzure
+	ExternalModel *ExternalAzure
 }
 
 type ExternalAzure struct {

@@ -75,10 +75,10 @@ func (w *WrapperImpl) prepareRequest(cxAuth string, metaData *message.MetaData, 
 		req.Header.Set("X-Request-ID", metaData.RequestID)
 		req.Header.Set("X-Tenant-ID", metaData.TenantID)
 		req.Header.Set("User-Agent", metaData.UserAgent)
-		req.Header.Set("X-Feature-Name", metaData.Feature)
-		if metaData.ExternalAzure != nil {
-			req.Header.Set("X-External-Azure-Endpoint", metaData.ExternalAzure.Endpoint)
-			req.Header.Set("X-External-Azure-ApiKey", metaData.ExternalAzure.ApiKey)
+		req.Header.Set("X-Feature", metaData.Feature)
+		if metaData.ExternalModel != nil {
+			req.Header.Set("X-External-Endpoint", metaData.ExternalModel.Endpoint)
+			req.Header.Set("X-External-ApiKey", metaData.ExternalModel.ApiKey)
 		}
 	} else
 	// headers suited for openAi endpoint
