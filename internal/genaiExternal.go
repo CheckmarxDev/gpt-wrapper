@@ -105,6 +105,13 @@ func (w *WrapperImpl) handleGptResponse(accessToken string, metaData *message.Me
 	var errorResponse = new(ErrorResponse)
 	err = json.Unmarshal(bodyBytes, errorResponse)
 	if err != nil {
+		if resp.StatusCode == http.StatusUnauthorized {
+			return nil, fmt.Errorf("cx token unauthorized")
+		}
+		//ai-proxy resource forbidden for this tenant by feature flag
+		if resp.StatusCode == http.StatusForbidden {
+			return nil, fmt.Errorf("forbidden by the feature flag")
+		}
 		return nil, err
 	}
 	switch resp.StatusCode {

@@ -10,9 +10,9 @@ import (
 
 type StatefulWrapper interface {
 	GenerateId() uuid.UUID
-	SecureCall(string, *message.MetaData, uuid.UUID, []message.Message) ([]message.Message, error)
-	Call(uuid.UUID, []message.Message) ([]message.Message, error)
-	SetupCall([]message.Message)
+	SecureCall(cxAuth string, metaData *message.MetaData, id uuid.UUID, newMessages []message.Message) ([]message.Message, error)
+	Call(id uuid.UUID, newMessages []message.Message) ([]message.Message, error)
+	SetupCall(setupMessages []message.Message)
 	MaskSecrets(fileContent string) (*maskedSecret.MaskedEntry, error)
 }
 

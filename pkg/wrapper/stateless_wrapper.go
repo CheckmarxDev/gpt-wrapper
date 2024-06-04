@@ -14,9 +14,9 @@ import (
 const OpenAiEndPoint = "https://api.openai.com/v1/chat/completions"
 
 type StatelessWrapper interface {
-	SecureCall(string, *message.MetaData, []message.Message, []message.Message) ([]message.Message, error)
-	Call([]message.Message, []message.Message) ([]message.Message, error)
-	SetupCall([]message.Message)
+	SecureCall(cxAuth string, metaData *message.MetaData, history []message.Message, newMessages []message.Message) ([]message.Message, error)
+	Call(history []message.Message, newMessages []message.Message) ([]message.Message, error)
+	SetupCall(setupMessages []message.Message)
 	MaskSecrets(fileContent string) (*maskedSecret.MaskedEntry, error)
 }
 
