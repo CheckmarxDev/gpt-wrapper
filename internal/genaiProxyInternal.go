@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 
@@ -61,7 +62,7 @@ func (w *WrapperInternalImpl) Call(_ string, metaData *message.MetaData, request
 	if err != nil {
 		return nil, err
 	}
-	return w.handleGptResponse("", metaData, request, resp)
+	return w.handleGptResponse(metaData, request, resp)
 }
 
 func (w *WrapperInternalImpl) prepareRequest(metaData *message.MetaData, requestBody *ChatCompletionRequest) (*redirect_prompt.RedirectPromptRequest, error) {
@@ -69,19 +70,20 @@ func (w *WrapperInternalImpl) prepareRequest(metaData *message.MetaData, request
 	if err != nil {
 		return nil, err
 	}
-	req := &redirect_prompt.RedirectPromptRequest{
-		Content: jsonData,
+	if metaData == nil {
+		return nil, errors.New("metadata is nil")
 	}
-	if metaData != nil {
-		req.Tenant = metaData.TenantID
-		req.RequestId = metaData.RequestID
-		req.Origin = metaData.UserAgent
-		req.Feature = metaData.Feature
+	req := &redirect_prompt.RedirectPromptRequest{
+		Content:   jsonData,
+		Tenant:    metaData.TenantID,
+		RequestId: metaData.RequestID,
+		Origin:    metaData.UserAgent,
+		Feature:   metaData.Feature,
 	}
 	return req, nil
 }
 
-func (w *WrapperInternalImpl) handleGptResponse(_ string, metaData *message.MetaData, requestBody *ChatCompletionRequest, resp *redirect_prompt.RedirectPromptResponse) (*ChatCompletionResponse, error) {
+func (w *WrapperInternalImpl) handleGptResponse(metaData *message.MetaData, requestBody *ChatCompletionRequest, resp *redirect_prompt.RedirectPromptResponse) (*ChatCompletionResponse, error) {
 	var err error
 	bodyBytes, err := io.ReadAll(bytes.NewBuffer(resp.Content))
 	if err != nil {
