@@ -6,14 +6,8 @@ type Message struct {
 }
 
 type MetaData struct {
-	TenantID      string
-	RequestID     string
-	UserAgent     string
-	Feature       string
-	ExternalModel *ExternalAzure
-}
-
-type ExternalAzure struct {
-	Endpoint string
-	ApiKey   string
+	TenantID  string
+	RequestID string
+	UserAgent string
+	Feature   string
 }
