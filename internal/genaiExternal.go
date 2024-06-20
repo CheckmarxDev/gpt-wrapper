@@ -8,6 +8,7 @@ import (
 	"github.com/Checkmarx/gen-ai-wrapper/pkg/models"
 	"io"
 	"net/http"
+	"strconv"
 )
 
 type WrapperImpl struct {
@@ -98,28 +99,22 @@ func (w *WrapperImpl) handleGptResponse(accessToken string, metaData *message.Me
 		}
 		return responseBody, nil
 	}
-	var errorResponse = new(ErrorResponse)
-	err = json.Unmarshal(bodyBytes, errorResponse)
-	if err != nil {
-		if resp.StatusCode == http.StatusUnauthorized {
-			return nil, fmt.Errorf("cx token unauthorized")
+	if resp.StatusCode == http.StatusFailedDependency {
+		var errorResponse = new(ErrorResponse)
+		err = json.Unmarshal(bodyBytes, errorResponse)
+		if err != nil {
+			return nil, err
 		}
-		//ai-proxy resource forbidden for this tenant by feature flag
-		if resp.StatusCode == http.StatusForbidden {
-			return nil, fmt.Errorf("forbidden by the feature flag")
-		}
-		return nil, err
-	}
-	switch resp.StatusCode {
-	case http.StatusBadRequest:
 		if errorResponse.Error.Code == errorCodeMaxTokens {
 			return w.Call(accessToken, metaData, &ChatCompletionRequest{
 				Model:    requestBody.Model,
 				Messages: requestBody.Messages[w.dropLen:],
 			})
 		}
+		code, _ := strconv.Atoi(resp.Header.Get("X-Gen-Ai-ErrorCode"))
+		return nil, fromResponse(code, errorResponse)
 	}
-	return nil, fromResponse(resp.StatusCode, errorResponse)
+	return nil, fmt.Errorf("unexpected response status code: %d", resp.StatusCode)
 }
 
 func (w *WrapperImpl) Close() error {
