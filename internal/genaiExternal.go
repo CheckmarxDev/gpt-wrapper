@@ -111,6 +111,9 @@ func (w *WrapperImpl) handleGptResponse(accessToken string, metaData *message.Me
 				Messages: requestBody.Messages[w.dropLen:],
 			})
 		}
+		if metaData == nil {
+			return nil, fromResponse(resp.StatusCode, errorResponse)
+		}
 		code, _ := strconv.Atoi(resp.Header.Get("X-Gen-Ai-ErrorCode"))
 		return nil, fromResponse(code, errorResponse)
 	}
