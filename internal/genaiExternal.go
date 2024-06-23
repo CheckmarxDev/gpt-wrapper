@@ -99,7 +99,7 @@ func (w *WrapperImpl) handleGptResponse(accessToken string, metaData *message.Me
 		}
 		return responseBody, nil
 	}
-	if resp.StatusCode == http.StatusFailedDependency {
+	if resp.StatusCode == http.StatusFailedDependency || metaData == nil {
 		var errorResponse = new(ErrorResponse)
 		err = json.Unmarshal(bodyBytes, errorResponse)
 		if err != nil {
