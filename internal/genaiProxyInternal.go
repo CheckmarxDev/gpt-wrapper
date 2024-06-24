@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 
@@ -38,21 +39,21 @@ func (w *WrapperInternalImpl) SetupCall(messages []message.Message) {
 	w.setupMessages = messages
 }
 
-func (w *WrapperInternalImpl) Call(requestBody ChatCompletionRequest) (*ChatCompletionResponse, error) {
+func (w *WrapperInternalImpl) Call(_ string, metaData *message.MetaData, request *ChatCompletionRequest) (*ChatCompletionResponse, error) {
 	if w.setupMessages != nil {
 		//true for GPT4
-		if requestBody.Model == models.GPT4 {
-			requestBody.Messages = append(w.setupMessages, requestBody.Messages...)
+		if request.Model == models.GPT4 {
+			request.Messages = append(w.setupMessages, request.Messages...)
 		} else {
-			userIndex := findLastUserIndex(requestBody.Messages)
-			front := requestBody.Messages[:userIndex]
-			back := requestBody.Messages[userIndex:]
-			requestBody.Messages = append(front, w.setupMessages...)
-			requestBody.Messages = append(requestBody.Messages, back...)
+			userIndex := findLastUserIndex(request.Messages)
+			front := request.Messages[:userIndex]
+			back := request.Messages[userIndex:]
+			request.Messages = append(front, w.setupMessages...)
+			request.Messages = append(request.Messages, back...)
 		}
 	}
 
-	req, err := w.prepareRequest(ChatMetaData{}, requestBody)
+	req, err := w.prepareRequest(metaData, request)
 	if err != nil {
 		return nil, err
 	}
@@ -61,24 +62,28 @@ func (w *WrapperInternalImpl) Call(requestBody ChatCompletionRequest) (*ChatComp
 	if err != nil {
 		return nil, err
 	}
-	return w.handleGptResponse(requestBody, resp)
+	return w.handleGptResponse(metaData, request, resp)
 }
 
-func (w *WrapperInternalImpl) prepareRequest(metaData ChatMetaData, requestBody ChatCompletionRequest) (*redirect_prompt.RedirectPromptRequest, error) {
+func (w *WrapperInternalImpl) prepareRequest(metaData *message.MetaData, requestBody *ChatCompletionRequest) (*redirect_prompt.RedirectPromptRequest, error) {
 	jsonData, err := json.Marshal(requestBody)
 	if err != nil {
 		return nil, err
 	}
+	if metaData == nil {
+		return nil, errors.New("metadata is nil")
+	}
 	req := &redirect_prompt.RedirectPromptRequest{
+		Content:   jsonData,
 		Tenant:    metaData.TenantID,
 		RequestId: metaData.RequestID,
-		Origin:    metaData.Origin,
-		Content:   jsonData,
+		Origin:    metaData.UserAgent,
+		Feature:   metaData.Feature,
 	}
 	return req, nil
 }
 
-func (w *WrapperInternalImpl) handleGptResponse(requestBody ChatCompletionRequest, resp *redirect_prompt.RedirectPromptResponse) (*ChatCompletionResponse, error) {
+func (w *WrapperInternalImpl) handleGptResponse(metaData *message.MetaData, requestBody *ChatCompletionRequest, resp *redirect_prompt.RedirectPromptResponse) (*ChatCompletionResponse, error) {
 	var err error
 	bodyBytes, err := io.ReadAll(bytes.NewBuffer(resp.Content))
 	if err != nil {
@@ -100,7 +105,7 @@ func (w *WrapperInternalImpl) handleGptResponse(requestBody ChatCompletionReques
 	switch resp.GenAiErrorCode {
 	case http.StatusBadRequest:
 		if errorResponse.Error.Code == errorCodeMaxTokens {
-			return w.Call(ChatCompletionRequest{
+			return w.Call("", metaData, &ChatCompletionRequest{
 				Model:    requestBody.Model,
 				Messages: requestBody.Messages[w.dropLen:],
 			})

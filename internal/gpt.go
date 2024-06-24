@@ -11,42 +11,41 @@ import (
 // const gptByAzure = "https://cxgpt4.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2023-05-15"
 // const gptByOpenAi = "https://api.openai.com/v1/chat/completions"
 
-type ChatMetaData struct {
-	TenantID  string `json:"tenant_id"`
-	RequestID string `json:"request_id"`
-	Origin    string `json:"origin"`
-}
-
 type ChatCompletionRequest struct {
 	Model    string            `json:"model"`
 	Messages []message.Message `json:"messages"`
 }
 
-type ChatCompletionResponse struct {
-	ID      string `json:"id,omitempty"`
-	Choices []struct {
-		Index        int             `json:"index,omitempty"`
-		Message      message.Message `json:"message"`
-		FinishReason string          `json:"finish_reason,omitempty"`
-	} `json:"choices,omitempty"`
-	Usage struct {
-		TotalTokens      int `json:"total_tokens,omitempty"`
-		CompletionTokens int `json:"completion_tokens,omitempty"`
-		PromptTokens     int `json:"prompt_tokens,omitempty"`
-	} `json:"usage,omitempty"`
+type Choices []struct {
+	Index        int             `json:"index,omitempty"`
+	Message      message.Message `json:"message"`
+	FinishReason string          `json:"finish_reason,omitempty"`
 }
 
+type Usage struct {
+	TotalTokens      int `json:"total_tokens,omitempty"`
+	CompletionTokens int `json:"completion_tokens,omitempty"`
+	PromptTokens     int `json:"prompt_tokens,omitempty"`
+}
+
+type ChatCompletionResponse struct {
+	ID      string  `json:"id,omitempty"`
+	Choices Choices `json:"choices,omitempty"`
+	Usage   Usage   `json:"usage,omitempty"`
+}
+type GptError struct {
+	Message string      `json:"message,omitempty"`
+	Type    string      `json:"type,omitempty"`
+	Param   string      `json:"param,omitempty"`
+	Code    interface{} `json:"code,omitempty"`
+}
 type ErrorResponse struct {
-	Error struct {
-		Message string      `json:"message,omitempty"`
-		Type    string      `json:"type,omitempty"`
-		Param   string      `json:"param,omitempty"`
-		Code    interface{} `json:"code,omitempty"`
-	} `json:"error,omitempty"`
+	Error GptError `json:"error,omitempty"`
 }
 
 type Wrapper interface {
-	Call(request ChatCompletionRequest) (*ChatCompletionResponse, error)
+	//Call todo in a clean way, to handle both internal and external wrappers required splitting Call into two functions build the request and send the request
+	Call(auth string, metaData *message.MetaData, request *ChatCompletionRequest) (*ChatCompletionResponse, error)
 	SetupCall(messages []message.Message)
 	Close() error
 }

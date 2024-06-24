@@ -8,6 +8,7 @@ import (
 	"github.com/Checkmarx/gen-ai-wrapper/pkg/models"
 	"io"
 	"net/http"
+	"strconv"
 )
 
 type WrapperImpl struct {
@@ -29,21 +30,21 @@ func (w *WrapperImpl) SetupCall(messages []message.Message) {
 	w.setupMessages = messages
 }
 
-func (w *WrapperImpl) Call(requestBody ChatCompletionRequest) (*ChatCompletionResponse, error) {
+func (w *WrapperImpl) Call(cxAuth string, metaData *message.MetaData, request *ChatCompletionRequest) (*ChatCompletionResponse, error) {
 	if w.setupMessages != nil {
 		//true for GPT4
-		if requestBody.Model == models.GPT4 {
-			requestBody.Messages = append(w.setupMessages, requestBody.Messages...)
+		if request.Model == models.GPT4 {
+			request.Messages = append(w.setupMessages, request.Messages...)
 		} else {
-			userIndex := findLastUserIndex(requestBody.Messages)
-			front := requestBody.Messages[:userIndex]
-			back := requestBody.Messages[userIndex:]
-			requestBody.Messages = append(front, w.setupMessages...)
-			requestBody.Messages = append(requestBody.Messages, back...)
+			userIndex := findLastUserIndex(request.Messages)
+			front := request.Messages[:userIndex]
+			back := request.Messages[userIndex:]
+			request.Messages = append(front, w.setupMessages...)
+			request.Messages = append(request.Messages, back...)
 		}
 	}
 
-	req, err := w.prepareRequest(requestBody)
+	req, err := w.prepareRequest(cxAuth, metaData, request)
 	if err != nil {
 		return nil, err
 	}
@@ -56,10 +57,10 @@ func (w *WrapperImpl) Call(requestBody ChatCompletionRequest) (*ChatCompletionRe
 		_ = resp.Body.Close()
 	}()
 
-	return w.handleGptResponse(requestBody, resp)
+	return w.handleGptResponse(cxAuth, metaData, request, resp)
 }
 
-func (w *WrapperImpl) prepareRequest(requestBody ChatCompletionRequest) (*http.Request, error) {
+func (w *WrapperImpl) prepareRequest(cxAuth string, metaData *message.MetaData, requestBody *ChatCompletionRequest) (*http.Request, error) {
 	jsonData, err := json.Marshal(requestBody)
 	if err != nil {
 		return nil, err
@@ -68,12 +69,23 @@ func (w *WrapperImpl) prepareRequest(requestBody ChatCompletionRequest) (*http.R
 	if err != nil {
 		return nil, err
 	}
+
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", w.apiKey))
+	if metaData != nil {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", cxAuth))
+		req.Header.Set("X-Request-ID", metaData.RequestID)
+		req.Header.Set("X-Tenant-ID", metaData.TenantID)
+		req.Header.Set("User-Agent", metaData.UserAgent)
+		req.Header.Set("X-Feature", metaData.Feature)
+	} else
+	// headers suited for openAi endpoint
+	{
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", w.apiKey))
+	}
 	return req, nil
 }
 
-func (w *WrapperImpl) handleGptResponse(requestBody ChatCompletionRequest, resp *http.Response) (*ChatCompletionResponse, error) {
+func (w *WrapperImpl) handleGptResponse(accessToken string, metaData *message.MetaData, requestBody *ChatCompletionRequest, resp *http.Response) (*ChatCompletionResponse, error) {
 	var err error
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -87,21 +99,25 @@ func (w *WrapperImpl) handleGptResponse(requestBody ChatCompletionRequest, resp 
 		}
 		return responseBody, nil
 	}
-	var errorResponse = new(ErrorResponse)
-	err = json.Unmarshal(bodyBytes, errorResponse)
-	if err != nil {
-		return nil, err
-	}
-	switch resp.StatusCode {
-	case http.StatusBadRequest:
+	if resp.StatusCode == http.StatusFailedDependency || metaData == nil {
+		var errorResponse = new(ErrorResponse)
+		err = json.Unmarshal(bodyBytes, errorResponse)
+		if err != nil {
+			return nil, err
+		}
 		if errorResponse.Error.Code == errorCodeMaxTokens {
-			return w.Call(ChatCompletionRequest{
+			return w.Call(accessToken, metaData, &ChatCompletionRequest{
 				Model:    requestBody.Model,
 				Messages: requestBody.Messages[w.dropLen:],
 			})
 		}
+		if metaData == nil {
+			return nil, fromResponse(resp.StatusCode, errorResponse)
+		}
+		code, _ := strconv.Atoi(resp.Header.Get("X-Gen-Ai-ErrorCode"))
+		return nil, fromResponse(code, errorResponse)
 	}
-	return nil, fromResponse(resp.StatusCode, errorResponse)
+	return nil, fmt.Errorf("unexpected response status code: %d", resp.StatusCode)
 }
 
 func (w *WrapperImpl) Close() error {

@@ -1,6 +1,7 @@
 package wrapper
 
 import (
+	"errors"
 	"github.com/Checkmarx/gen-ai-wrapper/pkg/connector"
 	"github.com/Checkmarx/gen-ai-wrapper/pkg/maskedSecret"
 	"github.com/Checkmarx/gen-ai-wrapper/pkg/message"
@@ -9,8 +10,9 @@ import (
 
 type StatefulWrapper interface {
 	GenerateId() uuid.UUID
-	Call(uuid.UUID, []message.Message) ([]message.Message, error)
-	SetupCall([]message.Message)
+	SecureCall(cxAuth string, metaData *message.MetaData, historyID uuid.UUID, newMessages []message.Message) ([]message.Message, error)
+	Call(historyID uuid.UUID, newMessages []message.Message) ([]message.Message, error)
+	SetupCall(setupMessages []message.Message)
 	MaskSecrets(fileContent string) (*maskedSecret.MaskedEntry, error)
 }
 
@@ -47,33 +49,37 @@ func (w *StatefulWrapperImpl) GenerateId() uuid.UUID {
 	return uuid.New()
 }
 
-func (w *StatefulWrapperImpl) Call(id uuid.UUID, newMessages []message.Message) ([]message.Message, error) {
+func (w *StatefulWrapperImpl) SecureCall(cxAuth string, metaData *message.MetaData, historyID uuid.UUID, newMessages []message.Message) ([]message.Message, error) {
 	var err error
 	var history []message.Message
 	var response []message.Message
 
-	history, err = w.connector.HistoryById(id)
+	history, err = w.connector.HistoryById(historyID)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err = w.StatelessWrapper.Call(history, newMessages)
+	response, err = w.StatelessWrapper.SecureCall(cxAuth, metaData, history, newMessages)
 	if err != nil {
 		return nil, err
 	}
 	if len(response) != 1 {
-		panic(response)
+		return nil, errors.New("unexpected response length")
 	}
 
 	history = append(history, newMessages...)
 	history = append(history, response[0])
 
-	err = w.connector.SaveHistory(id, history)
+	err = w.connector.SaveHistory(historyID, history)
 	if err != nil {
 		return nil, err
 	}
 
 	return response, nil
+}
+
+func (w *StatefulWrapperImpl) Call(historyID uuid.UUID, newMessages []message.Message) ([]message.Message, error) {
+	return w.SecureCall("", nil, historyID, newMessages)
 }
 
 func (w *StatefulWrapperImpl) MaskSecrets(fileContent string) (*maskedSecret.MaskedEntry, error) {
