@@ -16,27 +16,31 @@ type ChatCompletionRequest struct {
 	Messages []message.Message `json:"messages"`
 }
 
-type ChatCompletionResponse struct {
-	ID      string `json:"id,omitempty"`
-	Choices []struct {
-		Index        int             `json:"index,omitempty"`
-		Message      message.Message `json:"message"`
-		FinishReason string          `json:"finish_reason,omitempty"`
-	} `json:"choices,omitempty"`
-	Usage struct {
-		TotalTokens      int `json:"total_tokens,omitempty"`
-		CompletionTokens int `json:"completion_tokens,omitempty"`
-		PromptTokens     int `json:"prompt_tokens,omitempty"`
-	} `json:"usage,omitempty"`
+type Choices []struct {
+	Index        int             `json:"index,omitempty"`
+	Message      message.Message `json:"message"`
+	FinishReason string          `json:"finish_reason,omitempty"`
 }
 
+type Usage struct {
+	TotalTokens      int `json:"total_tokens,omitempty"`
+	CompletionTokens int `json:"completion_tokens,omitempty"`
+	PromptTokens     int `json:"prompt_tokens,omitempty"`
+}
+
+type ChatCompletionResponse struct {
+	ID      string  `json:"id,omitempty"`
+	Choices Choices `json:"choices,omitempty"`
+	Usage   Usage   `json:"usage,omitempty"`
+}
+type GptError struct {
+	Message string      `json:"message,omitempty"`
+	Type    string      `json:"type,omitempty"`
+	Param   string      `json:"param,omitempty"`
+	Code    interface{} `json:"code,omitempty"`
+}
 type ErrorResponse struct {
-	Error struct {
-		Message string      `json:"message,omitempty"`
-		Type    string      `json:"type,omitempty"`
-		Param   string      `json:"param,omitempty"`
-		Code    interface{} `json:"code,omitempty"`
-	} `json:"error,omitempty"`
+	Error GptError `json:"error,omitempty"`
 }
 
 type Wrapper interface {
